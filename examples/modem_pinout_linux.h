@@ -60,9 +60,13 @@ extern "C" {
 /********************************************************************************/
 
 // Radio specific pinout (adjust these for your actual hardware connections)
-#define RADIO_NRST RPI_GPIO12
-#define RADIO_BUSY_PIN RPI_GPIO5
-#define RADIO_DIO_MAIN RPI_GPIO16
+#define RADIO_NRST RPI_GPIO4
+#define RADIO_BUSY_PIN RPI_GPIO18
+#ifdef LR20XX
+#define RADIO_DIO_MAIN RPI_GPIO5
+#else
+#define RADIO_DIO_MAIN RPI_GPIO27
+#endif
 
 #define SMTC_LED_RX NC
 #define SMTC_LED_TX NC
