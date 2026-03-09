@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
 # Select HAL implementation based on platform
-if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM")
+if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
     # Linux (native or ARM) uses direct spidev/GPIO implementation
     # UDP virtual radio has no hardware HAL - only needs BSP
     if(RADIO_FAMILY STREQUAL "udp_pf")
