@@ -39,6 +39,12 @@ include(smtc_modem_crypto.cmake)
 add_library(lora_basics_modem STATIC)
 #target_link_libraries(lora_basics_modem PUBLIC smtc_ralf::smtc_ralf_${RADIO_FAMILY})
 
+# GCC 14+ promotes -Wincompatible-pointer-types to an error by default.
+# LBM v4.9.0 has enum-to-uint8_t pointer casts in smtc_modem.c that trigger this.
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "14")
+    target_compile_options(lora_basics_modem PRIVATE -Wno-incompatible-pointer-types)
+endif()
+
 add_subdirectory(lr1mac/src/smtc_real)
 
 target_sources(lora_basics_modem PRIVATE
