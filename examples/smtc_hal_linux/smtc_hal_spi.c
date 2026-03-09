@@ -57,7 +57,11 @@
  */
 
 #define SPI_DEVICE_PATH "/dev/spidev0.0"
-#define SPI_SPEED_HZ 20000000
+#if defined( LR20XX )
+#define SPI_SPEED_HZ 20000000  // LR20xx supports up to 24 MHz
+#else
+#define SPI_SPEED_HZ 8000000   // SX126x max 16 MHz; 8 MHz safe default
+#endif
 #define SPI_MODE SPI_MODE_0
 
 /*
