@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.25)
 
 # Check if BOARD is defined
 if(NOT DEFINED BOARD OR BOARD STREQUAL "")
-    message(FATAL_ERROR "You have to define a -DBOARD=NUCLEO_L476, NUCLEO_L073, LINUX, or LINUX_ARM")
+    message(FATAL_ERROR "You have to define a -DBOARD=NUCLEO_L476, NUCLEO_L073, LINUX, LINUX_ARM, or LINUX_ARM64")
 endif()
 
 message(STATUS "BOARD is set to: '${BOARD}'")
@@ -18,17 +18,21 @@ elseif("${BOARD}" STREQUAL "LINUX")
     # Suitable for virtual radio (udp_pf) testing on development machines
     message(STATUS "Native Linux build (no cross-compilation)")
 elseif("${BOARD}" STREQUAL "LINUX_ARM")
-    # Cross-compilation for ARM Linux targets (Raspberry Pi, etc.)
+    # Cross-compilation for ARM Linux targets (Raspberry Pi, etc.) - 32-bit
     set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/smtc_hal_linux/cmake_linux_arm_toolchain.cmake)
-    message(STATUS "ARM Linux cross-compilation enabled")
+    message(STATUS "ARM Linux cross-compilation enabled (32-bit)")
+elseif("${BOARD}" STREQUAL "LINUX_ARM64")
+    # Cross-compilation for ARM64 Linux targets (Raspberry Pi 4/5 64-bit, etc.)
+    set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/smtc_hal_linux/cmake_linux_arm64_toolchain.cmake)
+    message(STATUS "ARM64 Linux cross-compilation enabled")
 elseif("${BOARD}" STREQUAL "FPB_RA0E2")
     set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/smtc_hal_ra0e2/cmake_ra0e2_toolchain.cmake)
 else()
-    message(FATAL_ERROR "Unknown BOARD: '${BOARD}'. Valid values: NUCLEO_L476, NUCLEO_L073, LINUX, LINUX_ARM, FPB_RA0E2")
+    message(FATAL_ERROR "Unknown BOARD: '${BOARD}'. Valid values: NUCLEO_L476, NUCLEO_L073, LINUX, LINUX_ARM, LINUX_ARM64, FPB_RA0E2")
 endif()
-set_property(CACHE BOARD PROPERTY STRINGS "NUCLEO_L476;NUCLEO_L073;LINUX;LINUX_ARM;FPB_RA0E2")
+set_property(CACHE BOARD PROPERTY STRINGS "NUCLEO_L476;NUCLEO_L073;LINUX;LINUX_ARM;LINUX_ARM64;FPB_RA0E2")
 
-if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM")
+if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
     project(examples
         DESCRIPTION "LoRa Basics Modem examples"
         LANGUAGES C
@@ -261,7 +265,7 @@ if("${BOARD}" STREQUAL "NUCLEO_L073")
     set(SMTC_HAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/smtc_hal_l0_LL)
 elseif("${BOARD}" STREQUAL "NUCLEO_L476")
     set(SMTC_HAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/smtc_hal_l4)
-elseif("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM")
+elseif("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
     set(SMTC_HAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/smtc_hal_linux)
 elseif("${BOARD}" STREQUAL "FPB_RA0E2")
     set(SMTC_HAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/smtc_hal_ra0e2)
@@ -284,7 +288,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../smtc_rac_lib smtc_rac_lib)
 # Apply logging configuration to smtc_rac target
 if(TARGET smtc_rac)
     # Add LINUX_PLATFORM definition for ral.h when building for Linux
-    if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM")
+    if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
         if(TARGET smtc_ral_${RADIO_FAMILY})
             target_compile_definitions(smtc_ral_${RADIO_FAMILY} PUBLIC LINUX_PLATFORM)
         endif()
