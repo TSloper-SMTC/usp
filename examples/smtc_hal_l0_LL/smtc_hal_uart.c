@@ -70,6 +70,11 @@
  * --- PRIVATE VARIABLES -------------------------------------------------------
  */
 
+#define TRACE_RX_RING_SIZE 256
+static volatile uint8_t  trace_rx_ring[TRACE_RX_RING_SIZE];
+static volatile uint16_t trace_rx_head = 0;
+static volatile uint16_t trace_rx_tail = 0;
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
@@ -106,7 +111,7 @@ void trace_uart_init( void )
     usart_init.DataWidth           = LL_USART_DATAWIDTH_8B;
     usart_init.StopBits            = LL_USART_STOPBITS_1;
     usart_init.Parity              = LL_USART_PARITY_NONE;
-    usart_init.TransferDirection   = LL_USART_DIRECTION_TX;
+    usart_init.TransferDirection   = LL_USART_DIRECTION_TX_RX;
     usart_init.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
     usart_init.OverSampling        = LL_USART_OVERSAMPLING_16;
     LL_USART_Init( USART2, &usart_init );
@@ -117,6 +122,13 @@ void trace_uart_init( void )
     while( !( LL_USART_IsActiveFlag_TEACK( USART2 ) ) )
     {
     }
+    while( !( LL_USART_IsActiveFlag_REACK( USART2 ) ) )
+    {
+    }
+
+    LL_USART_EnableIT_RXNE( USART2 );
+    NVIC_SetPriority( USART2_IRQn, 1 );
+    NVIC_EnableIRQ( USART2_IRQn );
 }
 
 void trace_uart_deinit( void )
@@ -286,6 +298,37 @@ void hw_modem_uart_tx( uint8_t* buff, uint8_t len )
     {
     }
 }
+void USART2_IRQHandler( void )
+{
+    if( LL_USART_IsActiveFlag_ORE( USART2 ) )
+    {
+        LL_USART_ClearFlag_ORE( USART2 );
+    }
+    if( LL_USART_IsActiveFlag_RXNE( USART2 ) )
+    {
+        uint8_t  byte = LL_USART_ReceiveData8( USART2 );
+        uint16_t next = ( trace_rx_head + 1 ) % TRACE_RX_RING_SIZE;
+        if( next != trace_rx_tail )
+        {
+            trace_rx_ring[trace_rx_head] = byte;
+            trace_rx_head                = next;
+        }
+    }
+}
+
+bool trace_uart_rx_available( void )
+{
+    return trace_rx_head != trace_rx_tail;
+}
+
+int trace_uart_rx_getchar( void )
+{
+    if( trace_rx_head == trace_rx_tail ) return -1;
+    uint8_t  byte = trace_rx_ring[trace_rx_tail];
+    trace_rx_tail  = ( trace_rx_tail + 1 ) % TRACE_RX_RING_SIZE;
+    return ( int ) byte;
+}
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------

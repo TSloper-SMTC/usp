@@ -83,6 +83,12 @@ extern "C" {
 #define DIRECT_DRIVER_ACCESS 15
 #define CAD 16
 #define GEOLOCATION 17
+#define NWD_EXAMPLE 18
+#define FLRC_BURST_EXAMPLE 20
+#define IMMEDIATE_RADIO_ACCESS 21
+#define FULL_ALMANAC_UPDATE 22
+#define WIFI_REGION_DETECTION 23
+
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
@@ -91,6 +97,8 @@ extern "C" {
 void main_periodical_uplink( void );
 void main_hw_modem( void );
 void main_geolocation( void );
+void main_full_almanac_update( void );
+void main_wifi_region_detection( void );
 void main_porting_tests( void );
 void main_lctt_certif( void );
 void main_multiprotocol( void );
@@ -105,6 +113,8 @@ void main_rf_certification( void );
 void main_tx_cw( void );
 void main_direct_driver_access( void );
 void main_cad( void );
+void main_flrc_burst( void );
+void main_immediate_radio_access( void );
 #ifdef __cplusplus
 }
 #endif

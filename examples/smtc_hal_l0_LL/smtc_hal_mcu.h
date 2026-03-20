@@ -122,7 +122,7 @@ void hal_mcu_init( void );
 /*!
  * Reset mcu
  */
-void hal_mcu_reset( void );
+_Noreturn void hal_mcu_reset( void );
 
 /*!
  * Blocking wait

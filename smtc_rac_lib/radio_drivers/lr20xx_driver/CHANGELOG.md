@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.1] - 2026-02-09
+
+### Added
+
+- [LoRa] `freq_offset_hz` field to `lr20xx_radio_lora_packet_status_t`
+- [FiFo] Add functions for 1024 byte Tx/Rx FiFos:
+  - `lr20xx_radio_fifo_configure_1024_byte_tx_fifo`
+  - `lr20xx_radio_fifo_1024_byte_tx_fifo_store_retention_mem`
+  - `lr20xx_radio_fifo_configure_1024_byte_rx_fifo`
+  - `lr20xx_radio_fifo_1024_byte_rx_fifo_store_retention_mem`
+- [workaround] Functions related to 1024-byte Tx/Rx FiFos low thresholds above 256
+  - `lr20xx_workarounds_1024_byte_fifo_cfg_irq`
+  - `lr20xx_workarounds_1024_byte_fifo_cfg_irq_store_retention_mem`
+- [FLRC] `crc_ok` field to `lr20xx_radio_flrc_rx_stats_t`
+
+## [v1.4.0] - 2026-01-26
+
+### Added
+
+- [workaround] `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking` and `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking_store_retention_mem`
+
+### Changed
+
+- [Bluetooth_LE] `lr20xx_radio_bluetooth_le_set_modulation_pkt_params` calls `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking`
+- [regmem] Change implementation of `lr20xx_regmem_write_regmem32` and `lr20xx_regmem_read_regmem32` to extract the buffer length check in a function
+
+### Fixed
+
+- Remove erroneous mention in readme concerning application of workarounds
+
 ## [v1.3.4] - 2025-11-25
 
 ### Added

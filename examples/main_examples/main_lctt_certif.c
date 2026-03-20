@@ -53,10 +53,9 @@
 #include "example_options.h"
 
 #include "smtc_hal_mcu.h"
-#include "smtc_hal_gpio.h"
+#include "smtc_hal_led.h"
+#include "smtc_hal_button.h"
 #include "smtc_hal_watchdog.h"
-
-#include "modem_pinout.h"
 
 #include <string.h>
 #include "smtc_modem_relay_api.h"
@@ -176,8 +175,7 @@ static uint8_t                  rx_payload_size = 0;      // Size of the payload
 static smtc_modem_dl_metadata_t rx_metadata     = { 0 };  // Metadata of downlink
 static uint8_t                  rx_remaining    = 0;      // Remaining downlink payload in modem
 
-static volatile bool user_button_is_press = false;  // Flag for button status
-static uint32_t      uplink_counter       = 0;      // uplink raising counter
+static uint32_t uplink_counter = 0;  // uplink raising counter
 
 static bool certif_running = false;
 
@@ -200,13 +198,6 @@ static uint8_t chip_pin[SMTC_MODEM_PIN_LENGTH] = { 0 };
  *  Several events may have to be read from the modem when this callback is called.
  */
 static void modem_event_callback( void );
-
-/**
- * @brief User callback for button EXTI
- *
- * @param context Define by the user at the init
- */
-static void user_button_callback( void* context );
 
 /**
  * @brief Handle action taken if button is pushed
@@ -237,18 +228,15 @@ void main_lctt_certif( void )
 
     // Configure all the µC periph (clock, gpio, timer, ...)
     hal_mcu_init( );
+
+    // Initialize LEDs and button
+    hal_led_init( );
+    hal_button_init( NULL, NULL );
+
     smtc_rac_init( );
     // Init the modem and use modem_event_callback as event callback, please note that the callback will be
     // called immediately after the first call to smtc_modem_run_engine because of the reset detection
     smtc_modem_init( &modem_event_callback );
-
-    // Configure Nucleo blue button as EXTI
-    hal_gpio_irq_t nucleo_blue_button = {
-        .pin      = EXTI_BUTTON,
-        .context  = NULL,                  // context pass to the callback - not used in this example
-        .callback = user_button_callback,  // callback called when EXTI is triggered
-    };
-    hal_gpio_init_in( EXTI_BUTTON, BSP_GPIO_PULL_MODE_NONE, BSP_GPIO_IRQ_MODE_FALLING, &nucleo_blue_button );
 
     // Init done: enable interruption
     hal_mcu_enable_irq( );
@@ -259,9 +247,9 @@ void main_lctt_certif( void )
     while( 1 )
     {
         // Check button
-        if( user_button_is_press == true )
+        if( hal_button_is_pressed( ) )
         {
-            user_button_is_press = false;
+            hal_button_clear( );
 
             main_handle_push_button( );
         }
@@ -271,7 +259,7 @@ void main_lctt_certif( void )
 
         // Atomically check sleep conditions (button was not pressed)
         hal_mcu_disable_irq( );
-        if( ( user_button_is_press == false ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
+        if( ( !hal_button_is_pressed( ) ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
         {
             hal_watchdog_reload( );
             hal_mcu_set_sleep_for_ms( MIN( sleep_time_ms, WATCHDOG_RELOAD_PERIOD_MS ) );
@@ -503,6 +491,11 @@ static void modem_event_callback( void )
             SMTC_HAL_TRACE_INFO( "Event received: DUTY_CYCLE\n" );
             break;
         }
+        case SMTC_MODEM_EVENT_NO_DOWNLINK_THRESHOLD:
+        {
+            SMTC_HAL_TRACE_INFO( "Event received: NO_DOWNLINK_THRESHOLD\n" );
+            break;
+        }
         default:
         {
             SMTC_HAL_TRACE_ERROR( "Unknown event %u\n", current_event.event_type );
@@ -512,21 +505,6 @@ static void modem_event_callback( void )
     } while( event_pending_count > 0 );
 }
 
-static void user_button_callback( void* context )
-{
-    SMTC_HAL_TRACE_INFO( "Button pushed\n" );
-
-    ( void ) context;  // Not used in the example - avoid warning
-
-    static uint32_t last_press_timestamp_ms = 0;
-
-    // Debounce the button press, avoid multiple triggers
-    if( ( int32_t ) ( smtc_modem_hal_get_time_in_ms( ) - last_press_timestamp_ms ) > 500 )
-    {
-        last_press_timestamp_ms = smtc_modem_hal_get_time_in_ms( );
-        user_button_is_press    = true;
-    }
-}
 static void main_handle_push_button( void )
 {
     if( certif_running == true )

@@ -90,6 +90,10 @@ int main( void )
 
 #elif MAKEFILE_APP == GEOLOCATION
     main_geolocation( );
+#elif MAKEFILE_APP == FULL_ALMANAC_UPDATE
+    main_full_almanac_update( );
+#elif MAKEFILE_APP == WIFI_REGION_DETECTION
+    main_wifi_region_detection( );
 #elif MAKEFILE_APP == RTTOF
     // This example show how to perform a ranging exchange (with periodic uplink)
     main_ranging_demo( );
@@ -129,12 +133,13 @@ int main( void )
 #elif MAKEFILE_APP == CAD
     // This example shows CAD (Channel Activity Detection) operation
     main_cad( );
+#elif MAKEFILE_APP == FLRC_BURST_EXAMPLE
+    // This main is used for FLRC burst exchange
+    main_flrc_burst( );
+#elif MAKEFILE_APP == IMMEDIATE_RADIO_ACCESS
+    // This example shows immediate radio access
+    main_immediate_radio_access( );
 #else
 #error "Unknown application" ## MAKEFILE_APP
 #endif
 }
-
-/*
- * -----------------------------------------------------------------------------
- * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------
- */

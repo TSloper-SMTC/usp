@@ -288,6 +288,7 @@ typedef struct lr20xx_radio_lora_packet_status_s
                                  //!< Equivalent to rssi_pkt_in_dbm if snr_pkt_raw is positive, to rssi_pkt_in_dbm
                                  //!< + (snr_pkt_raw/4) if snr_pkt_raw is negative
     uint8_t rssi_signal_pkt_half_dbm_count;  //!< Count of 0.5 dBm to subtract to rssi_signal_pkt_in_dbm value in dBm
+    int32_t freq_offset_hz;                  //!< Frequency offset of the last packet received in Hz
 } lr20xx_radio_lora_packet_status_t;
 
 /**

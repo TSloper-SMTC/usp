@@ -44,6 +44,7 @@ extern "C" {
 #include <string.h>
 #include <smtc_rac_api.h>                                 // Original API structures
 #include "serialization/generated/smtc_rac_context.pb.h"  // Generated protobuf structures
+#include "../../../flrc_burst_example/flrc_burst_rx.h"    // flrc structures
 
 // ========================================
 // ENUM CONVERSION FUNCTIONS
@@ -55,9 +56,9 @@ extern "C" {
 smtc_rac_priority_pb_t rac_convert_priority_to_pb( smtc_rac_priority_t native_priority );
 
 /**
- * \brief Convert protobuf priority to native priority
+ * \brief Convert protobuf priority to native priority (with error checking)
  */
-smtc_rac_priority_t rac_convert_priority_from_pb( smtc_rac_priority_pb_t pb_priority );
+bool rac_convert_priority_from_pb( smtc_rac_priority_pb_t pb_priority, smtc_rac_priority_t* output );
 
 /**
  * \brief Convert native modulation type to protobuf modulation type
@@ -119,13 +120,42 @@ void rac_convert_radio_params_to_pb( const smtc_rac_radio_lora_params_t* native_
                                      rac_radio_lora_params_pb_t*         pb_params );
 
 /**
- * \brief Convert protobuf radio params to native radio params
+ * \brief Convert protobuf LoRa radio params to native radio params
  *
  * \param [in] pb_params Protobuf radio params structure
  * \param [out] native_params Native radio params structure to populate
  */
 void rac_convert_radio_params_from_pb( const rac_radio_lora_params_pb_t* pb_params,
                                        smtc_rac_radio_lora_params_t*     native_params );
+
+/**
+ * \brief Convert native FLRC radio params to protobuf FLRC radio params
+ *
+ * \param [in] native_params Native FLRC radio params structure
+ * \param [out] pb_params Protobuf FLRC radio params structure to populate
+ */
+void rac_convert_flrc_radio_params_to_pb( const smtc_rac_radio_flrc_params_t* native_params,
+                                          rac_radio_flrc_params_pb_t*         pb_params );
+
+/**
+ * \brief Convert protobuf FLRC radio params to native FLRC radio params
+ *
+ * \param [in] pb_params Protobuf FLRC radio params structure
+ * \param [out] native_params Native FLRC radio params structure to populate
+ * \param [out] sync_word_buffers Array of 3 buffers to store the sync words (each must be at least 4 bytes)
+ */
+void rac_convert_flrc_radio_params_from_pb( const rac_radio_flrc_params_pb_t* pb_params,
+                                            smtc_rac_radio_flrc_params_t*     native_params,
+                                            uint8_t*                          sync_word_buffers[3] );
+
+/**
+ * \brief Convert protobuf FLRC burst params to native FLRC burst RX config
+ *
+ * \param [in] pb_params Protobuf FLRC burst params structure
+ * \param [out] native_config Native FLRC burst RX config structure to populate
+ */
+void convert_pb_flrc_burst_params_to_native_config( const flrc_burst_params_pb_t* pb_params,
+                                                    flrc_burst_rx_config_t*       native_config );
 
 /**
  * \brief Convert protobuf data buffer setup to native data buffer setup

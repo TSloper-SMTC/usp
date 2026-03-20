@@ -79,6 +79,10 @@ extern "C" {
  * lr20xx_radio_bluetooth_le_set_modulation_params and @ref lr20xx_radio_bluetooth_le_set_pkt_params if @p phy is set to
  * @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB.
  *
+ * The workaround function @ref lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking must be called after @ref
+ * lr20xx_radio_bluetooth_le_set_modulation_params and @ref lr20xx_radio_bluetooth_le_set_pkt_params if @p phy is set to
+ * @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB.
+ *
  * If @p phy is @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_2M the workaround function @ref
  * lr20xx_workarounds_bluetooth_le_2mbps_preamble_length must be called right after @ref
  * lr20xx_radio_bluetooth_le_set_modulation_params. The workaround function @ref
@@ -96,7 +100,8 @@ extern "C" {
  * @return lr20xx_status_t Operation status
  *
  * @see lr20xx_workarounds_bluetooth_le_phy_coded_syncwords, lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift,
- * lr20xx_radio_bluetooth_le_set_pkt_params, lr20xx_radio_bluetooth_le_set_modulation_pkt_params
+ * lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking, lr20xx_radio_bluetooth_le_set_pkt_params,
+ * lr20xx_radio_bluetooth_le_set_modulation_pkt_params
  */
 lr20xx_status_t lr20xx_radio_bluetooth_le_set_modulation_params( const void*                           context,
                                                                  const lr20xx_radio_bluetooth_le_phy_t phy );
@@ -112,6 +117,10 @@ lr20xx_status_t lr20xx_radio_bluetooth_le_set_modulation_params( const void*    
  * lr20xx_radio_bluetooth_le_set_modulation_params and @ref lr20xx_radio_bluetooth_le_set_pkt_params if @p phy is set to
  * @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB.
  *
+ * The workaround function @ref lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking must be called after @ref
+ * lr20xx_radio_bluetooth_le_set_modulation_params and @ref lr20xx_radio_bluetooth_le_set_pkt_params if @p phy is set to
+ * @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB.
+ *
  * The helper function @ref lr20xx_radio_bluetooth_le_set_modulation_pkt_params configures both modulation and packet
  * Bluetooth LE parameters, and calls the @ref lr20xx_workarounds_bluetooth_le_phy_coded_syncwords and @ref
  * lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift if necessary.
@@ -122,7 +131,8 @@ lr20xx_status_t lr20xx_radio_bluetooth_le_set_modulation_params( const void*    
  * @return lr20xx_status_t Operation status
  *
  * @see lr20xx_workarounds_bluetooth_le_phy_coded_syncwords, lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift,
- * lr20xx_radio_bluetooth_le_set_modulation_params, lr20xx_radio_bluetooth_le_set_modulation_pkt_params
+ * lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking, lr20xx_radio_bluetooth_le_set_modulation_params,
+ * lr20xx_radio_bluetooth_le_set_modulation_pkt_params
  */
 lr20xx_status_t lr20xx_radio_bluetooth_le_set_pkt_params( const void*                                   context,
                                                           const lr20xx_radio_bluetooth_le_pkt_params_t* pkt_params );
@@ -134,8 +144,11 @@ lr20xx_status_t lr20xx_radio_bluetooth_le_set_pkt_params( const void*           
  * This helper function executes the following sequence:
  * 1. Call @ref lr20xx_radio_bluetooth_le_set_modulation_params
  * 2. Call @ref lr20xx_radio_bluetooth_le_set_pkt_params
- * 3. Call @ref lr20xx_workarounds_bluetooth_le_phy_coded_syncwords if the @p phy parameter is @ref
- * LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB.
+ * 3. Apply the following workarounds if @p phy parameter is @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB or @ref
+ * LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB:
+ *   - @ref lr20xx_workarounds_bluetooth_le_phy_coded_syncwords
+ *   - @ref lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift
+ *   - @ref lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking
  *
  * @param[in] context Chip implementation context
  * @param[in] phy Bluetooth_LE PHY configuration
@@ -143,7 +156,8 @@ lr20xx_status_t lr20xx_radio_bluetooth_le_set_pkt_params( const void*           
  *
  * @return lr20xx_status_t Operation status
  *
- * @see lr20xx_workarounds_bluetooth_le_phy_coded_syncwords, lr20xx_radio_bluetooth_le_set_modulation_params,
+ * @see lr20xx_workarounds_bluetooth_le_phy_coded_syncwords, lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift,
+ * lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking, lr20xx_radio_bluetooth_le_set_modulation_params,
  * lr20xx_radio_bluetooth_le_set_pkt_params
  */
 lr20xx_status_t lr20xx_radio_bluetooth_le_set_modulation_pkt_params(

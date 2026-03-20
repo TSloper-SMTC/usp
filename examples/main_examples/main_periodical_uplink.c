@@ -43,6 +43,8 @@
 
 #include "smtc_modem_test_api.h"
 #include "smtc_modem_api.h"
+#include "smtc_modem_relay_api.h"
+#include "smtc_rac_api.h"
 #include "smtc_modem_utilities.h"
 
 #include "smtc_modem_hal.h"
@@ -54,13 +56,10 @@
 #include "smtc_rac_log.h"
 
 #include "smtc_hal_mcu.h"
-#include "smtc_hal_gpio.h"
+#include "smtc_hal_button.h"
+#include "smtc_hal_led.h"
 #include "smtc_hal_watchdog.h"
 
-#include "modem_pinout.h"
-#include "smtc_modem_relay_api.h"
-#include <string.h>
-#include "smtc_rac_api.h"
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE MACROS-----------------------------------------------------------
@@ -167,7 +166,7 @@ static const uint8_t user_app_key[16]     = USER_LORAWAN_APP_KEY;
 #ifndef DELAY_FIRST_MSG_AFTER_JOIN
 #define DELAY_FIRST_MSG_AFTER_JOIN 60
 #endif
-#define NOW 0
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE TYPES -----------------------------------------------------------
@@ -182,8 +181,7 @@ static uint8_t                  rx_payload_size = 0;      // Size of the payload
 static smtc_modem_dl_metadata_t rx_metadata     = { 0 };  // Metadata of downlink
 static uint8_t                  rx_remaining    = 0;      // Remaining downlink payload in modem
 
-static volatile bool user_button_is_press = false;  // Flag for button status
-static uint32_t      uplink_counter       = 0;      // uplink raising counter
+static uint32_t uplink_counter = 0;  // uplink raising counter
 
 #if defined( USE_RELAY_TX )
 static smtc_modem_relay_tx_config_t relay_config = { 0 };
@@ -210,13 +208,6 @@ static uint8_t chip_pin[SMTC_MODEM_PIN_LENGTH] = { 0 };
 static void modem_event_callback( void );
 
 /**
- * @brief User callback for button EXTI
- *
- * @param context Define by the user at the init
- */
-static void user_button_callback( void* context );
-
-/**
  * @brief Send the 32bits uplink counter on chosen port
  */
 static void send_uplink_counter_on_port( uint8_t port );
@@ -225,17 +216,6 @@ static void send_uplink_counter_on_port( uint8_t port );
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
-static void set_led( uint8_t led, bool state )
-{
-    if( state == true )
-    {
-        hal_gpio_init_out( led, 1 );
-    }
-    else
-    {
-        hal_gpio_init_out( led, 0 );
-    }
-}
 
 /**
  * @brief Example to send a user payload on an external event
@@ -251,33 +231,27 @@ void main_periodical_uplink( void )
     // Configure all the µC periph (clock, gpio, timer, ...)
     hal_mcu_init( );
 
+    // Initialize LEDs and button
+    hal_led_init( );
+    hal_button_init( NULL, NULL );
+
     // Init the modem and use modem_event_callback as event callback, please note that the callback will be
     // called immediately after the first call to smtc_modem_run_engine because of the reset detection
     smtc_rac_init( );
 
     smtc_modem_init( &modem_event_callback );
 
-    // Configure Nucleo blue button as EXTI
-    hal_gpio_irq_t nucleo_blue_button = {
-        .pin      = EXTI_BUTTON,
-        .context  = NULL,                  // context pass to the callback - not used in this example
-        .callback = user_button_callback,  // callback called when EXTI is triggered
-    };
-    hal_gpio_init_in( EXTI_BUTTON, BSP_GPIO_PULL_MODE_NONE, BSP_GPIO_IRQ_MODE_FALLING, &nucleo_blue_button );
-
-    // Init done: enable interruption
+    // Init done: enable interrupts
     hal_mcu_enable_irq( );
 
     SMTC_HAL_TRACE_INFO( "Periodical uplink (%d sec) example is starting \n", PERIODICAL_UPLINK_DELAY_S );
 
-    set_led( SMTC_LED_TX, true );
-    set_led( SMTC_LED_RX, false );
     while( 1 )
     {
-        // Check button
-        if( user_button_is_press == true )
+        // Check button (works for both physical and virtual button)
+        if( hal_button_is_pressed( ) )
         {
-            user_button_is_press = false;
+            hal_button_clear( );
 
             smtc_modem_status_mask_t status_mask = 0;
             smtc_modem_get_status( STACK_ID, &status_mask );
@@ -290,12 +264,11 @@ void main_periodical_uplink( void )
         }
 
         // Modem process launch
-
         sleep_time_ms = smtc_modem_run_engine( );
         smtc_rac_run_engine( );
         // Atomically check sleep conditions (button was not pressed and no modem flags pending)
         hal_mcu_disable_irq( );
-        if( ( user_button_is_press == false ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
+        if( ( hal_button_is_pressed( ) == false ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
         {
             hal_watchdog_reload( );
             hal_mcu_set_sleep_for_ms( MIN( sleep_time_ms, WATCHDOG_RELOAD_PERIOD_MS ) );
@@ -545,22 +518,6 @@ static void modem_event_callback( void )
             break;
         }
     } while( event_pending_count > 0 );
-}
-
-static void user_button_callback( void* context )
-{
-    SMTC_HAL_TRACE_INFO( "Button pushed\n" );
-
-    ( void ) context;  // Not used in the example - avoid warning
-
-    static uint32_t last_press_timestamp_ms = 0;
-
-    // Debounce the button press, avoid multiple triggers
-    if( ( int32_t ) ( smtc_modem_hal_get_time_in_ms( ) - last_press_timestamp_ms ) > 500 )
-    {
-        last_press_timestamp_ms = smtc_modem_hal_get_time_in_ms( );
-        user_button_is_press    = true;
-    }
 }
 
 static void send_uplink_counter_on_port( uint8_t port )

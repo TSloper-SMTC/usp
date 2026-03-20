@@ -70,7 +70,7 @@
     ( 3 * LR20XX_RADIO_LORA_CAD_SIDE_DETECTOR_CONFIGURATION_LENGTH )
 
 #define LR20XX_RADIO_LORA_GET_RX_STATISTICS_RBUFFER_LENGTH ( 8 )
-#define LR20XX_RADIO_LORA_GET_PACKET_STATUS_RBUFFER_LENGTH ( 6 )
+#define LR20XX_RADIO_LORA_GET_PACKET_STATUS_RBUFFER_LENGTH ( 9 )
 
 /*
  * -----------------------------------------------------------------------------
@@ -383,6 +383,10 @@ lr20xx_status_t lr20xx_radio_lora_get_packet_status( const void*                
         pkt_status->detector                       = ( rbuffer[5] >> 2 ) & 0x0F;
         pkt_status->rssi_pkt_half_dbm_count        = ( rbuffer[5] >> 1 ) & 0x01;
         pkt_status->rssi_signal_pkt_half_dbm_count = ( rbuffer[5] >> 0 ) & 0x01;
+        /* Extract 24-bit signed value and sign-extend to 32 bits */
+        int32_t freq_offset_24 = ( ( rbuffer[6] << 16 ) | ( rbuffer[7] << 8 ) | rbuffer[8] ) & 0x00FFFFFF;
+        /* Sign-extend: shift left 8 bits then arithmetic shift right 8 bits */
+        pkt_status->freq_offset_hz = ( freq_offset_24 << 8 ) >> 8;
     }
 
     return status;

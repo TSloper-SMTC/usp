@@ -41,6 +41,8 @@
 #include <stdbool.h>  // bool type
 
 #include "smtc_hal_mcu.h"
+#include "smtc_hal_uart.h"
+#include <errno.h>
 
 /*
  * -----------------------------------------------------------------------------
@@ -82,20 +84,55 @@ int __attribute__( ( weak ) ) _lseek( int file, int ptr, int dir )
     mcu_panic( );
     return -1;
 }
-int __attribute__( ( weak ) ) _read( int file, char* ptr, int len )
+int _read( int file, char* ptr, int len )
 {
-    mcu_panic( );
+    ( void ) file;
+    ( void ) ptr;
+    ( void ) len;
+    errno = EAGAIN;
     return -1;
 }
-int __attribute__( ( weak ) ) _write( int file, char* ptr, int len )
+int _write( int file, char* ptr, int len )
 {
-    mcu_panic( );
-    return -1;
+    ( void ) file;
+    /* Translate \n → \r\n so printf works correctly on serial terminals
+     * that require explicit CR (e.g. Tera Term in CR receive mode). */
+    for( int i = 0; i < len; i++ )
+    {
+        if( ptr[i] == '\n' )
+        {
+            static const uint8_t cr = '\r';
+            trace_uart_tx( ( uint8_t* ) &cr, 1 );
+        }
+        trace_uart_tx( ( uint8_t* ) &ptr[i], 1 );
+    }
+    return len;
 }
-int __attribute__( ( weak ) ) _isatty( int file )
+int _isatty( int file )
 {
-    mcu_panic( );
+    ( void ) file;
+    return 1;
+}
+
+#include <sys/stat.h>
+int _fstat( int file, struct stat* st )
+{
+    ( void ) file;
+    st->st_mode = S_IFCHR;
     return 0;
+}
+
+int _getpid( void )
+{
+    return 1;
+}
+
+int _kill( int pid, int sig )
+{
+    ( void ) pid;
+    ( void ) sig;
+    errno = EINVAL;
+    return -1;
 }
 
 /* --- EOF ------------------------------------------------------------------ */

@@ -45,6 +45,7 @@
 #include "lr20xx_system.h"
 #include "lr20xx_radio_ook.h"
 #include "lr20xx_radio_common.h"
+#include "lr20xx_radio_fifo.h"
 
 /*
  * -----------------------------------------------------------------------------
@@ -57,6 +58,10 @@
 #define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_FREQUENCY_DRIFT_REGISTER_ADDRESS ( 0x00F30C28 )
 #define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_FREQUENCY_DRIFT_REGISTER_MASK ( 0x1F << 5 )
 #define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_FREQUENCY_DRIFT_VALUE ( 30 << 5 )
+
+#define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_REGISTER_ADDRESS ( 0x00F30C14 )
+#define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_REGISTER_MASK ( 0x7F )
+#define LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_VALUE ( 0x7C )
 
 #define LR20XX_WORKAROUND_LORA_SX1276_COMPATIBILITY_REGISTER_ADDRESS ( 0x00F30A14 )
 #define LR20XX_WORKAROUND_LORA_SX1276_COMPATIBILITY_REGISTER_MASK ( 3 << 18 )
@@ -94,6 +99,9 @@
 #define LR20XX_WORKAROUND_RTTOF_EXTENDED_STUCK_MASK ( 0x7 << 24 )
 #define LR20XX_WORKAROUND_RTTOF_EXTENDED_STUCK_SET_VALUE ( 0x0 << 24 )
 #define LR20XX_WORKAROUND_RTTOF_EXTENDED_STUCK_RESET_VALUE ( 0x1 << 24 )
+
+#define LR20XX_WORKAROUND_CFG_IRQ_RX_FIFO_THRESHOLDS_REGISTER ( 0xF2A098 )
+#define LR20XX_WORKAROUND_CFG_IRQ_TX_FIFO_THRESHOLDS_REGISTER ( 0xF2A09C )
 
 /*
  * -----------------------------------------------------------------------------
@@ -236,6 +244,21 @@ lr20xx_status_t lr20xx_workarounds_bluetooth_le_2mbps_preamble_length( const voi
 
     return ( lr20xx_status_t ) lr20xx_hal_write(
         context, cbuffer, LR20XX_WORKAROUND_BLUETOOTH_LE_2MBPS_PREAMBLE_LENGTH_BUFFER_LENGTH, 0, 0 );
+}
+
+lr20xx_status_t lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking( const void* context )
+{
+    return lr20xx_regmem_write_regmem32_mask(
+        context, LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_REGISTER_ADDRESS,
+        LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_REGISTER_MASK,
+        LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_VALUE );
+}
+
+lr20xx_status_t lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking_store_retention_mem( const void* context,
+                                                                                                uint8_t     slot )
+{
+    return lr20xx_system_add_register_to_retention_mem(
+        context, slot, LR20XX_WORKAROUND_BLUETOOTH_LE_PHY_CODED_IMPROVE_BLOCKING_REGISTER_ADDRESS );
 }
 
 lr20xx_status_t lr20xx_workarounds_lora_enable_sx1276_compatibility_mode( const void* context )
@@ -604,6 +627,32 @@ lr20xx_status_t lr20xx_workarounds_rttof_extended_stuck_second_request_store_ret
                                                                                             uint8_t     slot )
 {
     return lr20xx_system_add_register_to_retention_mem( context, slot, LR20XX_WORKAROUND_RTTOF_EXTENDED_STUCK_ADDRESS );
+}
+
+lr20xx_status_t lr20xx_workarounds_1024_byte_fifo_cfg_irq(
+    const void* context, lr20xx_radio_fifo_flag_t rx_fifo_irq_enable, lr20xx_radio_fifo_flag_t tx_fifo_irq_enable,
+    uint16_t rx_fifo_high_threshold, uint16_t tx_fifo_low_threshold, uint16_t rx_fifo_low_threshold,
+    uint16_t tx_fifo_high_threshold )
+{
+    RETURN_STATUS_ON_NOT_OK( lr20xx_radio_fifo_cfg_irq( context, rx_fifo_irq_enable, tx_fifo_irq_enable,
+                                                        rx_fifo_high_threshold, 0, 0, tx_fifo_high_threshold ) );
+
+    const uint32_t rx_threshold_raw = ( uint32_t ) rx_fifo_low_threshold + ( rx_fifo_high_threshold << 16u );
+    const uint32_t tx_threshold_raw = ( uint32_t ) tx_fifo_low_threshold + ( tx_fifo_high_threshold << 16u );
+    RETURN_STATUS_ON_NOT_OK( lr20xx_regmem_write_regmem32(
+        context, LR20XX_WORKAROUND_CFG_IRQ_RX_FIFO_THRESHOLDS_REGISTER, &rx_threshold_raw, 1 ) );
+    return lr20xx_regmem_write_regmem32( context, LR20XX_WORKAROUND_CFG_IRQ_TX_FIFO_THRESHOLDS_REGISTER,
+                                         &tx_threshold_raw, 1 );
+}
+
+lr20xx_status_t lr20xx_workarounds_1024_byte_fifo_cfg_irq_store_retention_mem( const void* context,
+                                                                               uint8_t     retention_slot_rx_thresholds,
+                                                                               uint8_t retention_slot_tx_thresholds )
+{
+    RETURN_STATUS_ON_NOT_OK( lr20xx_system_add_register_to_retention_mem(
+        context, retention_slot_rx_thresholds, LR20XX_WORKAROUND_CFG_IRQ_RX_FIFO_THRESHOLDS_REGISTER ) );
+    return lr20xx_system_add_register_to_retention_mem( context, retention_slot_tx_thresholds,
+                                                        LR20XX_WORKAROUND_CFG_IRQ_TX_FIFO_THRESHOLDS_REGISTER );
 }
 
 /*

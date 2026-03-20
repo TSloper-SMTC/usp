@@ -79,9 +79,6 @@
 // !! SHOULD BE DEFINED BY USER !!
 #define ENABLE_TEST_FLASH 0  // Enable flash porting test BUT disable other porting tests
 
-// Delay introduced by HAL_LPTIM_TimeOut_Start_IT function of stm32l4xx_hal_lptim.c file
-#define BOARD_COMPENSATION_IN_MS 4
-
 #define NB_LOOP_TEST_SPI 2
 #define NB_LOOP_TEST_CONFIG_RADIO 2
 
@@ -103,7 +100,7 @@
 #define SYNC_WORD_NO_RADIO 0x21
 
 #define MARGIN_GET_TIME_IN_MS 1
-#define MARGIN_TIMER_IRQ_IN_MS 2
+#define MARGIN_TIMER_IRQ_IN_MS 1
 #define MARGIN_TIME_CONFIG_RADIO_IN_MS 8
 #define MARGIN_SLEEP_IN_MS 2
 
@@ -241,8 +238,6 @@ static bool porting_test_flash( void );
  */
 void main_porting_tests( void )
 {
-    bool ret = true;
-
     // Disable IRQ to avoid unwanted behaviour during init
     hal_mcu_disable_irq( );
 
@@ -257,19 +252,15 @@ void main_porting_tests( void )
 
 #if( ENABLE_TEST_FLASH == 0 )
 
-    ret = porting_test_spi( );
-    if( ret == false )
-        return;
+    porting_test_spi( );
 
-    ret = porting_test_radio_irq( );
-    if( ret == false )
-        return;
+    porting_test_radio_irq( );
 
-    ret = porting_test_get_time( );
+    // Radio timing test
+    porting_test_get_time( );
 
-    ret = porting_test_timer_irq( );
-    if( ret == false )
-        return;
+    // MCU timing test
+    porting_test_timer_irq( );
 
     porting_test_stop_timer( );
 
@@ -817,7 +808,7 @@ static bool porting_test_timer_irq( void )
 {
     SMTC_HAL_TRACE_MSG( "----------------------------------------\n porting_test_timer_irq : " );
 
-    uint32_t timer_ms      = 3000;
+    uint32_t timer_ms      = 1500;
     uint8_t  wait_start_ms = 5;
     uint16_t timeout_ms    = 2000;
     timer_irq_raised       = false;
@@ -832,8 +823,7 @@ static bool porting_test_timer_irq( void )
         // Do nothing
     }
 
-    smtc_modem_hal_start_timer( timer_ms, timer_irq_callback,
-                                NULL );  // Warning this function takes ~3,69 ms for STM32L4
+    smtc_modem_hal_start_timer( timer_ms, timer_irq_callback, NULL );
 
     // Timeout if irq not raised
     while( ( timer_irq_raised == false ) &&
@@ -848,7 +838,7 @@ static bool porting_test_timer_irq( void )
         return false;
     }
 
-    uint32_t time = timer_irq_time_ms - start_time_ms - BOARD_COMPENSATION_IN_MS;
+    uint32_t time = timer_irq_time_ms - start_time_ms;
 
     if( ( time >= timer_ms ) && ( time <= timer_ms + MARGIN_TIMER_IRQ_IN_MS ) )
     {
@@ -1329,7 +1319,7 @@ static bool porting_test_timer_irq_low_power( void )
 {
     SMTC_HAL_TRACE_MSG( "----------------------------------------\n porting_test_timer_irq_low_power : " );
 
-    uint32_t timer_ms      = 3000;
+    uint32_t timer_ms      = 1500;
     int32_t  sleep_ms      = timer_ms + 5000;
     uint8_t  wait_start_ms = 5;
     timer_irq_raised       = false;
@@ -1343,8 +1333,7 @@ static bool porting_test_timer_irq_low_power( void )
         // Do nothing
     }
 
-    smtc_modem_hal_start_timer( timer_ms, timer_irq_callback,
-                                NULL );  // Warning this function takes ~3,69 ms for STM32L4
+    smtc_modem_hal_start_timer( timer_ms, timer_irq_callback, NULL );
 
     hal_mcu_set_sleep_for_ms( sleep_ms );
 
@@ -1354,9 +1343,8 @@ static bool porting_test_timer_irq_low_power( void )
         return false;
     }
 
-    uint32_t time =
-        timer_irq_time_ms - start_time_ms - BOARD_COMPENSATION_IN_MS;  // TODO Warning to compensate delay introduced by
-                                                                       // smtc_modem_hal_start_timer for STM32L4
+    uint32_t time = timer_irq_time_ms - start_time_ms;
+
     if( ( time >= timer_ms ) && ( time <= timer_ms + MARGIN_TIMER_IRQ_IN_MS ) )
     {
         PORTING_TEST_MSG_OK( );
@@ -1523,12 +1511,10 @@ static bool porting_test_flash( void )
 static void radio_tx_irq_callback( void* obj )
 {
     UNUSED( obj );
-    // ral_irq_t radio_irq = 0;
 
     radio_irq_time_ms = smtc_modem_hal_get_time_in_ms( );
 
-    radio_irq_raised = true;
-
+    // ral_irq_t radio_irq = 0;
     // if( ral_get_irq_status( &( modem_radio.ral ), &radio_irq ) != RAL_STATUS_OK )
     // {
     //     SMTC_HAL_TRACE_MSG_COLOR( "NOK\n ral_get_irq_status() function failed \n", HAL_DBG_TRACE_COLOR_RED );
@@ -1538,6 +1524,8 @@ static void radio_tx_irq_callback( void* obj )
     {
         PORTING_TEST_MSG_NOK( " ral_clear_irq_status() function failed \n" );
     }
+
+    radio_irq_raised = true;
 }
 
 /**
@@ -1549,7 +1537,6 @@ static void radio_rx_irq_callback( void* obj )
 
     ral_irq_t radio_irq = 0;
     radio_irq_time_ms   = smtc_modem_hal_get_time_in_ms( );
-    radio_irq_raised    = true;
 
     if( ral_get_irq_status( &( modem_radio.ral ), &radio_irq ) != RAL_STATUS_OK )
     {
@@ -1569,6 +1556,9 @@ static void radio_rx_irq_callback( void* obj )
 
     // Shut Down the TCXO
     smtc_modem_hal_stop_radio_tcxo( );
+
+    // notify that the irq has been raised after checking the irq type in the callback
+    radio_irq_raised = true;
 }
 
 /**
@@ -1579,7 +1569,6 @@ static void radio_irq_callback_get_time_in_s( void* obj )
     UNUSED( obj );
     ral_irq_t radio_irq = 0;
     radio_irq_time_s    = smtc_modem_hal_get_time_in_s( );
-    radio_irq_raised    = true;
 
     if( ral_get_irq_status( &( modem_radio.ral ), &radio_irq ) != RAL_STATUS_OK )
     {
@@ -1598,6 +1587,9 @@ static void radio_irq_callback_get_time_in_s( void* obj )
 
     // Shut Down the TCXO
     smtc_modem_hal_stop_radio_tcxo( );
+
+    // notify that the irq has been raised after checking the irq type in the callback
+    radio_irq_raised = true;
 }
 
 /**

@@ -2,9 +2,28 @@
 
 This document presents the current known limitations of USP and their workarounds, when available.
 
-### Support of NUCLEO-L073RZ is experimental
+### ⚠️ This release is a **FEATURE RELEASE - UNSTABLE**
 
-Not all samples compile with NUCLEO-L073RZ.
+This preview release is not intended for production use. A stable release will be available soon
+
+### The FLRP features & examples are experimental
+
+The FLRP Protocol implemented in flrc_burst example is Work In Progress and available for demonstration. A more Stable version will be available soon.
+
+### rf_certification example & FCC duty-cyle limit
+
+FCC test application currently cannot reach the required 98% channel duty-cycle limit. A fix is in progress.
+
+### porting_tests application limitation
+
+On STM32L476RG, 2 tests are not passing :
+- With LR2021 : `porting_test_get_time/Get time in millisecond` : `NOK: Time is not coherent with radio irq : expected 1966ms / get 1968ms (margin +/-1ms)`
+  - This issue is under investigation, but currently, It did not prevent to pass OK through the Semtech full Validation Process
+- `porting_test_stop_timer` : the `hal_lp_timer_stop()` function is not functional, this is under fix for next release.
+
+### Support of NUCLEO-L073RZ & Renesas FPB-RA0E2 is experimental
+
+Not all samples compile with those platforms.
 Only periodical_uplink sample was tested with limited validation.
 
 ### hw_modem integration (#131)
@@ -30,11 +49,9 @@ If this issue occurs, try extending the `RP_MARGIN_DELAY` value from `8` to `12`
 
 The geolocation application from Legacy LoRa Basics Modem 3_geolocation_on_lora_edge Application suite was ported to USP.
 Nevertheless, the following tools are not yet available for USP:
-- full_almanac_update
 - lr11xx_flasher
-- wifi_region_detection
 
-If required, they can be retrieved from [Legacy LBM](https://github.com/Lora-net/SWL2001/tree/master/lbm_applications/3_geolocation_on_lora_edge).
+If required, It can be retrieved from [LR11xx Updater tool](https://github.com/Lora-net/SWTL001).
 
 ### USP API: `smtc_rac_submit_radio_transaction()` with out-of-range frequency is accepted (#98)
 
@@ -45,15 +62,6 @@ In future releases, an error will be returned or the firmware will reset with pa
 
 When using the LR20xx radio with LoRa modulation and BW 7, 10, 15, 20, the software crashes with a Division by zero exception.
 In future releases, an error will be returned or the firmware will reset with panic for out-of-range BW.
-
-### USP API: Max value for `symb_nb_timeout` is limited to `uint8_t` (#102)
-
-In RAC API, `smtc_rac_radio_lora_params_t`/`symb_nb_timeout` is stored in a `uint8_t` type. This restricts the max length for a LoRa preamble.
-LoRaWAN Relay TX/RX are not affected by this issue.
-
-### The `rf_certification` is not available
-
-The  `rf_certification`sample is temporary not available. Please contact the Semtech support for more details.
 
 ### The RAL_LORA_CAD_LBT CAD mode of `cad`example is not functional (#125)
 

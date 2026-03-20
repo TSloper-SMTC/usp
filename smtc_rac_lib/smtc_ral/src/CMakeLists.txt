@@ -30,11 +30,21 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-foreach(radio llcc68 lr11xx lr20xx sx126x sx127x sx128x)
+foreach(radio llcc68 lr11xx lr20xx sx126x sx127x sx128x udp_pf)
     set(library_name smtc_ral_${radio})
-    add_library(${library_name} STATIC EXCLUDE_FROM_ALL
-        ${CMAKE_CURRENT_SOURCE_DIR}/ral_${radio}.c
-    )
+
+    # For udp_pf, add base64.c for packet encoding
+    if(${radio} STREQUAL "udp_pf")
+        add_library(${library_name} STATIC EXCLUDE_FROM_ALL
+            ${CMAKE_CURRENT_SOURCE_DIR}/ral_${radio}.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/base64.c
+        )
+    else()
+        add_library(${library_name} STATIC EXCLUDE_FROM_ALL
+            ${CMAKE_CURRENT_SOURCE_DIR}/ral_${radio}.c
+        )
+    endif()
+
     target_include_directories(${library_name} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:>

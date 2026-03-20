@@ -52,7 +52,7 @@
 #define LR20XX_RADIO_FLRC_GET_PKT_STATUS_CMD_LENGTH ( 2 )
 #define LR20XX_RADIO_FLRC_SET_SYNCWORD_CMD_LENGTH ( 2 + 1 )
 
-#define LR20XX_RADIO_FLRC_GET_RX_STATS_RBUFFER_LENGTH ( 6 )
+#define LR20XX_RADIO_FLRC_GET_RX_STATS_RBUFFER_LENGTH ( 8 )
 #define LR20XX_RADIO_FLRC_GET_PKT_STATUS_RBUFFER_LENGTH ( 5 )
 
 /*
@@ -222,6 +222,7 @@ lr20xx_status_t lr20xx_radio_flrc_get_rx_stats( const void* context, lr20xx_radi
         statistics->received_packets = ( uint16_t ) ( ( ( uint16_t ) rbuffer[0] << 8 ) + rbuffer[1] );
         statistics->crc_errors       = ( uint16_t ) ( ( ( uint16_t ) rbuffer[2] << 8 ) + rbuffer[3] );
         statistics->length_errors    = ( uint16_t ) ( ( ( uint16_t ) rbuffer[4] << 8 ) + rbuffer[5] );
+        statistics->crc_ok           = ( uint16_t ) ( ( ( uint16_t ) rbuffer[6] << 8 ) + rbuffer[7] );
     }
 
     return status;

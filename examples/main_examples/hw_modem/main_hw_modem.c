@@ -61,30 +61,6 @@
  */
 #define WATCHDOG_RELOAD_PERIOD_MS 20000
 
-/**
- * @brief Callback for modem hal
- */
-static uint8_t prv_get_battery_level_cb( void )
-{
-    return 98;
-}
-
-/**
- * @brief Callback for modem hal
- */
-static uint16_t prv_get_battery_voltage_cb( void )
-{
-    return 3300;
-}
-
-/**
- * @brief Callback for modem hal
- */
-static int8_t prv_get_temperature_cb( void )
-{
-    return 25;
-}
-
 #ifdef ADD_FUOTA
 static uint32_t prv_get_hw_version_for_fuota( void )
 {

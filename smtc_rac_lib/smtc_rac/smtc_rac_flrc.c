@@ -103,6 +103,7 @@
 #include "ralf_sx127x.h"
 #elif defined( LR20XX )
 #include "ralf_lr20xx.h"
+#include "lr20xx_regmem.h"
 #endif
 
 /*
@@ -196,30 +197,38 @@ smtc_rac_return_code_t smtc_rac_flrc( uint8_t radio_access_id )
 
 static rp_radio_params_t prepare_radio_params_for_flrc( smtc_rac_context_t* rac_config )
 {
-    ralf_params_flrc_t flrc_param;
-    memset( &flrc_param, 0, sizeof( flrc_param ) );
+    ralf_params_flrc_t flrc_param = { 0 };
 
     // Basic radio parameters
-    flrc_param.rf_freq_in_hz     = rac_config->radio_params.flrc.frequency_in_hz;
+    flrc_param.rf_freq_in_hz = rac_config->radio_params.flrc.frequency_in_hz;
+
+    if( rac_config->radio_params.flrc.is_tx == false )
+    {
+        flrc_param.rf_freq_in_hz += rac_config->radio_params.flrc.rx_frequency_offset_in_hz;
+    }
+
     flrc_param.output_pwr_in_dbm = rac_config->radio_params.flrc.tx_power_in_dbm;
 
     // Modulation parameters
-    flrc_param.mod_params.br_in_bps    = rac_config->radio_params.flrc.br_in_bps;
-    flrc_param.mod_params.bw_dsb_in_hz = rac_config->radio_params.flrc.bw_dsb_in_hz;
+    flrc_param.mod_params.raw_bit_rate = rac_config->radio_params.flrc.raw_bit_rate;
     flrc_param.mod_params.cr           = rac_config->radio_params.flrc.cr;
     flrc_param.mod_params.pulse_shape  = rac_config->radio_params.flrc.pulse_shape;
 
     // Packet parameters
-    flrc_param.pkt_params.preamble_len_in_bits = rac_config->radio_params.flrc.preamble_len_in_bits;
-    flrc_param.pkt_params.sync_word_len        = rac_config->radio_params.flrc.sync_word_len;
-    flrc_param.pkt_params.tx_syncword          = rac_config->radio_params.flrc.tx_syncword;
-    flrc_param.pkt_params.match_sync_word      = rac_config->radio_params.flrc.match_sync_word;
-    flrc_param.pkt_params.pld_is_fix           = rac_config->radio_params.flrc.pld_is_fix;
+    flrc_param.pkt_params.preamble_len    = rac_config->radio_params.flrc.preamble_len;
+    flrc_param.pkt_params.sync_word_len   = rac_config->radio_params.flrc.sync_word_len;
+    flrc_param.pkt_params.tx_syncword     = rac_config->radio_params.flrc.tx_syncword_index;
+    flrc_param.pkt_params.match_sync_word = rac_config->radio_params.flrc.match_sync_word;
+    flrc_param.pkt_params.pld_is_fix      = rac_config->radio_params.flrc.pld_is_fix;
 
     flrc_param.pkt_params.crc_type = rac_config->radio_params.flrc.crc_type;
 
     // Advanced
-    flrc_param.sync_word      = rac_config->radio_params.flrc.sync_word;
+    for( uint8_t i = 0; i < ( sizeof( flrc_param.sync_word ) / sizeof( flrc_param.sync_word[0] ) ); i++ )
+    {
+        flrc_param.sync_word[i] = rac_config->radio_params.flrc.sync_word[i];
+    }
+
     flrc_param.crc_seed       = rac_config->radio_params.flrc.crc_seed;
     flrc_param.crc_polynomial = rac_config->radio_params.flrc.crc_polynomial;
 
@@ -230,6 +239,7 @@ static rp_radio_params_t prepare_radio_params_for_flrc( smtc_rac_context_t* rac_
 
     if( rac_config->radio_params.flrc.is_tx == true )
     {
+        rp_radio_params.tx.flrc.is_tx = true;
         // Note: FLRC shares union with lora/gfsk/lr_fhss in radio_planner_types
         // Use flrc union member shape to carry params where needed for ToA helper
         flrc_param.pkt_params.pld_len_in_bytes    = rac_config->radio_params.flrc.tx_size;
@@ -237,18 +247,26 @@ static rp_radio_params_t prepare_radio_params_for_flrc( smtc_rac_context_t* rac_
         rp_radio_params.tx.flrc.pkt_params        = *( ( ral_flrc_pkt_params_t* ) &( flrc_param.pkt_params ) );
         rp_radio_params.tx.flrc.rf_freq_in_hz     = flrc_param.rf_freq_in_hz;
         rp_radio_params.tx.flrc.output_pwr_in_dbm = flrc_param.output_pwr_in_dbm;
-        rp_radio_params.tx.flrc.sync_word         = flrc_param.sync_word;
-        rp_radio_params.tx.flrc.crc_seed          = flrc_param.crc_seed;
-        rp_radio_params.tx.flrc.crc_polynomial    = flrc_param.crc_polynomial;
+
+        rp_radio_params.tx.flrc.sync_word[flrc_param.pkt_params.tx_syncword - 1] =
+            &flrc_param.sync_word[flrc_param.pkt_params.tx_syncword - 1][0];
+
+        rp_radio_params.tx.flrc.crc_seed       = flrc_param.crc_seed;
+        rp_radio_params.tx.flrc.crc_polynomial = flrc_param.crc_polynomial;
     }
     else
     {
+        rp_radio_params.rx.flrc.is_tx          = false;
         flrc_param.pkt_params.pld_len_in_bytes = rac_config->radio_params.flrc.max_rx_size;
         rp_radio_params.rx.flrc.mod_params     = *( ( ral_flrc_mod_params_t* ) &( flrc_param.mod_params ) );
         rp_radio_params.rx.flrc.pkt_params     = *( ( ral_flrc_pkt_params_t* ) &( flrc_param.pkt_params ) );
         rp_radio_params.rx.flrc.rf_freq_in_hz  = flrc_param.rf_freq_in_hz;
         rp_radio_params.rx.timeout_in_ms       = rac_config->radio_params.flrc.rx_timeout_ms;
-        rp_radio_params.rx.flrc.sync_word      = flrc_param.sync_word;
+        for( uint8_t i = 0;
+             i < ( sizeof( rp_radio_params.rx.flrc.sync_word ) / sizeof( rp_radio_params.rx.flrc.sync_word[0] ) ); i++ )
+        {
+            rp_radio_params.rx.flrc.sync_word[i] = flrc_param.sync_word[i];
+        }
         rp_radio_params.rx.flrc.crc_seed       = flrc_param.crc_seed;
         rp_radio_params.rx.flrc.crc_polynomial = flrc_param.crc_polynomial;
     }
@@ -313,12 +331,10 @@ static void smtc_rac_flrc_tx_callback( void* rp_void )
     SMTC_MODEM_HAL_PANIC_ON_FAILURE( ral_set_tx( &( rp->radio->ral ) ) == RAL_STATUS_OK );
     rp_stats_set_tx_timestamp( &rp->stats, smtc_modem_hal_get_time_in_ms( ) );
 
-    RAC_LOG_TX(
-        "FLRC Tx callback - Freq:%u Hz, Power:%d dBm, BR:%u bps, BW:%u "
-        "Hz, length:%u\n",
-        radio_params->tx.flrc.rf_freq_in_hz, radio_params->tx.flrc.output_pwr_in_dbm,
-        radio_params->tx.flrc.mod_params.br_in_bps, radio_params->tx.flrc.mod_params.bw_dsb_in_hz,
-        rp->payload_buffer_size[id] );
+    RAC_LOG_TX( "FLRC Tx callback - Freq:%lu Hz, Power:%d dBm, BR_BW:%s Hz, length:%u\n",
+                flrc_burst_rp_radio_params.tx.flrc.rf_freq_in_hz, flrc_burst_rp_radio_params.tx.flrc.output_pwr_in_dbm,
+                ral_flrc_raw_bit_rate_to_str( flrc_burst_rp_radio_params.tx.flrc.mod_params.raw_bit_rate ),
+                rp->payload_buffer_size[id] );
 }
 
 static void smtc_rac_flrc_rx_callback( void* rp_void )
@@ -329,6 +345,17 @@ static void smtc_rac_flrc_rx_callback( void* rp_void )
     smtc_rac_context_t* rac_config   = smtc_rac_get_context( id );
 
     SMTC_MODEM_HAL_PANIC_ON_FAILURE( ralf_setup_flrc( rp->radio, &radio_params->rx.flrc ) == RAL_STATUS_OK );
+
+#if defined( LR20XX )
+    // Disable IF correlator if the frequency offset was measured with à LoRa Rx
+
+    if( rac_config->radio_params.flrc.rx_frequency_offset_in_hz != 0 )
+    {
+        uint32_t value = 0x000000;
+        lr20xx_regmem_write_regmem32( rp->radio->ral.context, 0x00F30D18, &value, 1 );
+    }
+#endif
+
     SMTC_MODEM_HAL_PANIC_ON_FAILURE(
         ral_set_dio_irq_params( &( rp->radio->ral ), RAL_IRQ_RX_DONE | RAL_IRQ_RX_TIMEOUT | RAL_IRQ_RX_HDR_ERROR |
                                                          RAL_IRQ_RX_CRC_ERROR ) == RAL_STATUS_OK );
@@ -350,6 +377,6 @@ static void smtc_rac_flrc_rx_callback( void* rp_void )
                                      RAL_STATUS_OK );
     rp_stats_set_rx_timestamp( &rp->stats, smtc_modem_hal_get_time_in_ms( ) );
 
-    RAC_LOG_RX( "FLRC Rx callback - Freq:%u Hz, BR:%u bps, BW:%u Hz\n", radio_params->rx.flrc.rf_freq_in_hz,
-                radio_params->rx.flrc.mod_params.br_in_bps, radio_params->rx.flrc.mod_params.bw_dsb_in_hz );
+    RAC_LOG_RX( "FLRC Rx callback - Freq:%lu Hz, BR_BW:%s Hz\n", flrc_burst_rp_radio_params.rx.flrc.rf_freq_in_hz,
+                ral_flrc_raw_bit_rate_to_str( flrc_burst_rp_radio_params.rx.flrc.mod_params.raw_bit_rate ) );
 }

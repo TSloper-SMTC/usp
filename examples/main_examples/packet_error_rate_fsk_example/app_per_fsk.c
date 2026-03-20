@@ -41,6 +41,7 @@
 #include "main_per_fsk.h"
 
 #include "smtc_rac_api.h"
+#include "smtc_hal_led.h"
 #include "smtc_sw_platform_helper.h"
 #include "smtc_modem_hal.h"
 
@@ -267,8 +268,8 @@ static void unified_transaction_callback( rp_status_t status )
     uint32_t counter_received             = 0;
 
     // Turn off LEDs after transaction
-    set_led( SMTC_PF_LED_TX, false );
-    set_led( SMTC_PF_LED_RX, false );
+    hal_led_set( HAL_LED_TX, false );
+    hal_led_set( HAL_LED_RX, false );
 
     switch( status )
     {
@@ -478,7 +479,7 @@ static void start_new_transaction( uint32_t delay )
     if( IS_TRANSMITTER )
     {
         PER_FSK_LOG_TX( "===== Starting transmission #%" PRIu32 "\n", packet_error_rate_fsk.exchange_count );
-        set_led( SMTC_PF_LED_TX, true );
+        hal_led_set( HAL_LED_TX, true );
 
         // set payload for the next transmission
         // Use dedicated packet_counter that resets to 0 at each series
@@ -489,7 +490,7 @@ static void start_new_transaction( uint32_t delay )
     else
     {
         PER_FSK_LOG_RX( "===== Starting reception #%" PRIu32 "\n", packet_error_rate_fsk.exchange_count );
-        set_led( SMTC_PF_LED_RX, true );
+        hal_led_set( HAL_LED_RX, true );
 
         // set the buffer where to store the received payload
         packet_error_rate_fsk.transaction->smtc_rac_data_buffer_setup.rx_payload_buffer = packet_error_rate_fsk.payload;

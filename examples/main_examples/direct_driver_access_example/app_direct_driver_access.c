@@ -48,6 +48,7 @@
 
 #include <stddef.h>
 #include "smtc_rac_api.h"
+#include "smtc_hal_led.h"
 #include "smtc_sw_platform_helper.h"
 #include "smtc_modem_hal.h"
 
@@ -204,7 +205,7 @@ static void pre_tx_callback( void )
     lr20xx_radio_fifo_write_tx( radio_driver_context, payload_buffer, LORA_PAYLOAD_LENGTH );
     lr20xx_radio_common_set_tx( radio_driver_context, 0 );
     cpt_transmit_multiple_time_the_same_packet = TRANSMIT_MULTIPLE_TIME_THE_SAME_PACKET;
-    set_led( SMTC_PF_LED_TX, true );
+    hal_led_set( HAL_LED_TX, true );
 }
 
 static void post_tx_callback( rp_status_t status )
@@ -212,20 +213,20 @@ static void post_tx_callback( rp_status_t status )
     void* radio_driver_context = smtc_rac_get_radio_driver_context( );
     if( status == RP_STATUS_RADIO_LOCKED )
     {
-        lr20xx_system_irq_mask_t radio_irq = LR20XX_SYSTEM_IRQ_NONE;
+        lr20xx_system_irq_mask_t radio_irq = LR20XX_SYSTEM_IRQ_ALL_MASK;
 
         cpt_transmit_multiple_time_the_same_packet--;
 
+        lr20xx_system_clear_irq_status( radio_driver_context, radio_irq );
         if( cpt_transmit_multiple_time_the_same_packet > 0 )
         {
             lr20xx_radio_fifo_write_tx( radio_driver_context, payload_buffer, LORA_PAYLOAD_LENGTH );
             lr20xx_radio_common_set_tx( radio_driver_context, 0 );
-            lr20xx_system_get_and_clear_irq_status( radio_driver_context, &radio_irq );
         }
         else
         {
             smtc_rac_unlock_radio_access( direct_driver_access.radio_access_id );
-            set_led( SMTC_PF_LED_TX, false );
+            hal_led_set( HAL_LED_TX, false );
             direct_driver_access.is_running = false;
         }
         DIRECT_DRIVER_PRINT( "usp/rac: transaction (transmission) has ended (success) %d\n",
@@ -234,13 +235,13 @@ static void post_tx_callback( rp_status_t status )
     else if( status == RP_STATUS_RADIO_UNLOCKED )
     {
         DIRECT_DRIVER_PRINT( "usp/rac: transaction (transmission) Unlocked \n" );
-        set_led( SMTC_PF_LED_TX, false );
+        hal_led_set( HAL_LED_TX, false );
         direct_driver_access.is_running = false;
     }
     else if( status == RP_STATUS_TASK_ABORTED )
     {
         DIRECT_DRIVER_PRINT( "usp/rac: transaction (transmission) Aborted \n" );
-        set_led( SMTC_PF_LED_TX, false );
+        hal_led_set( HAL_LED_TX, false );
         direct_driver_access.is_running = false;
     }
     else

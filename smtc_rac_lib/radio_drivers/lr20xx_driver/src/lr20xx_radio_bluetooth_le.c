@@ -260,7 +260,8 @@ lr20xx_status_t lr20xx_radio_bluetooth_le_conditionally_apply_phy_coded_workarou
     case LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB:
     {
         RETURN_STATUS_ON_NOT_OK( lr20xx_workarounds_bluetooth_le_phy_coded_syncwords( context ) );
-        return lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift( context );
+        RETURN_STATUS_ON_NOT_OK( lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift( context ) );
+        return lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking( context );
     }
     default:
     {

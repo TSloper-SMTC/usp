@@ -63,6 +63,13 @@
 #define LR20XX_GFSK_RX_CONSUMPTION_LDO 9500
 #define LR20XX_GFSK_RX_BOOSTED_CONSUMPTION_LDO 11730
 
+/* XOSC crystal load capacitor trim (XTAL boards only)
+ * xta_pf = 11.3 + xta * 0.47,  xtb_pf = 11.1 + xtb * 0.47
+ * FTR5238-A0 crystal (CL=10 pF), ~2 pF PCB stray. */
+#define LR20XX_XOSC_XTA           0x14   /* 18.7 pF */
+#define LR20XX_XOSC_XTB           0x14   /* 18.5 pF */
+#define LR20XX_XOSC_WAIT_US       150
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE TYPES -----------------------------------------------------------
@@ -343,7 +350,7 @@ void ral_lr20xx_bsp_get_tx_cfg( const void* context, const ral_lr20xx_bsp_tx_cfg
     lr20xx_radio_common_pa_selection_t pa_type;
 
     // check frequency band first to choose Low Frequency of High Frequency Power Amplifier
-    if( input_params->freq_in_hz >= 1600000000 )  // 1.6GHz
+    if( input_params->freq_in_hz >= 1500000000 )  // 1.5GHz
     {
         pa_type = LR20XX_RADIO_COMMON_PA_SEL_HF;
     }
@@ -359,7 +366,7 @@ void ral_lr20xx_bsp_get_tx_cfg( const void* context, const ral_lr20xx_bsp_tx_cfg
 void ral_lr20xx_bsp_get_rx_cfg( const void* context, const uint32_t freq_in_hz, lr20xx_radio_common_rx_path_t* rx_path,
                                 lr20xx_radio_common_rx_path_boost_mode_t* boost_mode )
 {
-    if( freq_in_hz >= 1600000000 )  // 1.6GHz
+    if( freq_in_hz >= 1500000000 )  // 1.5GHz
     {
         *rx_path = LR20XX_RADIO_COMMON_RX_PATH_HF;
     }
@@ -378,9 +385,9 @@ void ral_lr20xx_bsp_get_front_end_calibration_cfg(
     lr20xx_radio_common_rx_path_boost_mode_t boost_mode = LR20XX_RADIO_COMMON_RX_PATH_BOOST_MODE_NONE;
 
     uint32_t freq_in_hz[3] = {
-        470000000,   // Frequency 0 (range from 430MHz to 510MHz)
-        897500000,   // Frequency 1 (range from 867MHz to 928MHz)
-        2441000000,  // Frequency 2 (range from 2.403GHz to 2.479GHz)
+        870000000,   // Frequency 0 (range from 850MHz to 890MHz) +/- 20MHz
+        920000000,   // Frequency 1 (range from 900MHz to 940MHz) +/- 20MHz
+        2441000000,  // Frequency 2 (range from 2.391GHz to 2.491GHz) +/- 50MHz
     };
 
     for( uint8_t i = 0; i < 3; i++ )
@@ -399,17 +406,20 @@ void ral_lr20xx_bsp_get_dio_function( const void* context, lr20xx_system_dio_t d
         break;
     case LR20XX_SYSTEM_DIO_6:
         break;
+#if defined( LEGACY_EVK_LR20XX )
     case LR20XX_SYSTEM_DIO_7:
         break;
-#if defined( LEGACY_EVK_LR20XX )
     case LR20XX_SYSTEM_DIO_8:
         break;
     case LR20XX_SYSTEM_DIO_9:
-        *function = LR20XX_SYSTEM_DIO_FUNC_IRQ;  // LEGACY EVK
+        *function = LR20XX_SYSTEM_DIO_FUNC_IRQ;  // RADIO IRQ
         break;
 #else
+    case LR20XX_SYSTEM_DIO_7:
+        *function = LR20XX_SYSTEM_DIO_FUNC_IRQ;  // FIFO IRQs
+        break;
     case LR20XX_SYSTEM_DIO_8:
-        *function = LR20XX_SYSTEM_DIO_FUNC_IRQ;  // WIO board
+        *function = LR20XX_SYSTEM_DIO_FUNC_IRQ;  // Radio classic IRQs
         break;
     case LR20XX_SYSTEM_DIO_9:
         break;
@@ -424,7 +434,20 @@ void ral_lr20xx_bsp_get_dio_function( const void* context, lr20xx_system_dio_t d
 void ral_lr20xx_bsp_get_dio_sleep_drive( const void* context, lr20xx_system_dio_t dio,
                                          lr20xx_system_dio_drive_t* drive )
 {
+#if defined( FPB_RA0E2 )
+    switch( dio )
+    {
+    case LR20XX_SYSTEM_DIO_8:
+        *drive = LR20XX_SYSTEM_DIO_DRIVE_PULL_DOWN;
+        break;
+    default:
+        *drive = LR20XX_SYSTEM_DIO_DRIVE_NONE;
+        break;
+    }
+#else
+    ( void ) dio;
     *drive = LR20XX_SYSTEM_DIO_DRIVE_NONE;
+#endif
 }
 
 void ral_lr20xx_bsp_get_dio_irq_mask( const void* context, lr20xx_system_dio_t dio, lr20xx_system_irq_mask_t* irq_mask )
@@ -435,9 +458,13 @@ void ral_lr20xx_bsp_get_dio_irq_mask( const void* context, lr20xx_system_dio_t d
         *irq_mask = 0xFFFFFFFF & ~( LR20XX_SYSTEM_IRQ_FIFO_RX | LR20XX_SYSTEM_IRQ_FIFO_TX );
     }
 #else
-    if( dio == LR20XX_SYSTEM_DIO_8 )
+    if( dio == LR20XX_SYSTEM_DIO_8 )  // Main IRQ - All but FIFO RX/TX
     {
         *irq_mask = 0xFFFFFFFF & ~( LR20XX_SYSTEM_IRQ_FIFO_RX | LR20XX_SYSTEM_IRQ_FIFO_TX );
+    }
+    if( dio == LR20XX_SYSTEM_DIO_7 )  // FIFO IRQ - FIFO RX and TX
+    {
+        *irq_mask = ( LR20XX_SYSTEM_IRQ_FIFO_RX | LR20XX_SYSTEM_IRQ_FIFO_TX );
     }
 #endif
 }
@@ -472,6 +499,13 @@ void ral_lr20xx_bsp_get_dio_hf_clk_scaling_cfg( const void* context, lr20xx_syst
 void ral_bsp_lr20xx_get_lfclk_cfg( const void* context, lr20xx_system_lfclk_cfg_t* lfclk_cfg )
 {
     *lfclk_cfg = LR20XX_SYSTEM_LFCLK_RC;
+}
+
+void ral_lr20xx_bsp_get_xosc_cp_trim( const void* context, uint8_t* xta, uint8_t* xtb, uint8_t* wait_time_us )
+{
+    *xta          = LR20XX_XOSC_XTA;
+    *xtb          = LR20XX_XOSC_XTB;
+    *wait_time_us = LR20XX_XOSC_WAIT_US;
 }
 
 void ral_lr20xx_bsp_get_xosc_cfg( const void* context, ral_xosc_cfg_t* xosc_cfg,

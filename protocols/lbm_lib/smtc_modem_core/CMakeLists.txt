@@ -11,20 +11,20 @@ set(SMTC_MODEM_CORE_INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/lorawan_packages/lorawan_certification
     ${CMAKE_CURRENT_LIST_DIR}/lorawan_manager
     ${CMAKE_CURRENT_LIST_DIR}/lorawan_api
-   
+
     ${CMAKE_CURRENT_LIST_DIR}/lr1mac
     ${CMAKE_CURRENT_LIST_DIR}/lr1mac/src
     ${CMAKE_CURRENT_LIST_DIR}/lr1mac/src/services
-    ${CMAKE_CURRENT_LIST_DIR}/../../smtc_rac_lib/smtc_rac_api
-  
-    ${CMAKE_CURRENT_LIST_DIR}/../../smtc_rac_lib/radio_planner/src
-    ${CMAKE_CURRENT_LIST_DIR}/../../smtc_rac_lib/smtc_ral/src
-    ${CMAKE_CURRENT_LIST_DIR}/../../smtc_rac_lib/smtc_ralf/src
-    ${CMAKE_CURRENT_LIST_DIR}/../../smtc_rac_lib/radio_drivers
+    ${CMAKE_CURRENT_LIST_DIR}/lr1mac/src/smtc_real/src
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../../smtc_rac_lib/smtc_rac_api
+    ${CMAKE_CURRENT_LIST_DIR}/../../../smtc_rac_lib/radio_planner/src
+    ${CMAKE_CURRENT_LIST_DIR}/../../../smtc_rac_lib/smtc_ral/src
+    ${CMAKE_CURRENT_LIST_DIR}/../../../smtc_rac_lib/smtc_ralf/src
+    ${CMAKE_CURRENT_LIST_DIR}/../../../smtc_rac_lib/radio_drivers
+
     ${CMAKE_CURRENT_LIST_DIR}/smtc_modem_crypto
     ${CMAKE_CURRENT_LIST_DIR}/smtc_modem_crypto/smtc_secure_element
-    ${CMAKE_CURRENT_LIST_DIR}/lorawan_api
-    ${CMAKE_CURRENT_LIST_DIR}/lr1mac/src/smtc_real/src
 )
 
 # Logging library
@@ -38,6 +38,12 @@ include(smtc_modem_crypto.cmake)
 
 add_library(lora_basics_modem STATIC)
 #target_link_libraries(lora_basics_modem PUBLIC smtc_ralf::smtc_ralf_${RADIO_FAMILY})
+
+# GCC 14+ promotes -Wincompatible-pointer-types to an error by default.
+# LBM v4.9.0 has enum-to-uint8_t pointer casts in smtc_modem.c that trigger this.
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "14")
+    target_compile_options(lora_basics_modem PRIVATE -Wno-incompatible-pointer-types)
+endif()
 
 add_subdirectory(lr1mac/src/smtc_real)
 
@@ -58,7 +64,7 @@ target_sources(lora_basics_modem PRIVATE
     modem_utilities/fifo_ctrl.c
     modem_utilities/modem_core.c
     modem_utilities/modem_event_utilities.c
- 
+
     smtc_modem_test.c
     smtc_modem.c
 )
@@ -70,8 +76,14 @@ target_link_libraries(lora_basics_modem PRIVATE
     smtc_rac
     smtc_modem_api_internal
     smtc_modem_hal_interface
-    ${RADIO_FAMILY}_driver
 )
+
+# Link driver only if not UDP virtual radio (which has no real driver)
+if(NOT RADIO_FAMILY STREQUAL "udp_pf")
+    target_link_libraries(lora_basics_modem PRIVATE
+        ${RADIO_FAMILY}_driver
+    )
+endif()
 
 target_compile_definitions(lora_basics_modem PRIVATE ${RADIO_UPPER} ${RADIO_FAMILY_UPPER})
 

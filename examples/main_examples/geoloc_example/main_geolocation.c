@@ -51,14 +51,13 @@
 #include "example_options.h"
 
 #include "smtc_hal_mcu.h"
-#include "smtc_hal_gpio.h"
+#include "smtc_hal_led.h"
+#include "smtc_hal_button.h"
 #include "smtc_hal_watchdog.h"
 
 #include "lr11xx_system.h"
 
 #include "lr1110_board.h"
-
-#include "modem_pinout.h"
 
 #include "smtc_rac_api.h"
 
@@ -160,8 +159,6 @@ static uint8_t chip_eui[SMTC_MODEM_EUI_LENGTH] = { 0 };
 static uint8_t chip_pin[SMTC_MODEM_PIN_LENGTH] = { 0 };
 #endif
 
-static volatile bool user_button_is_press = false;  // Flag for button status
-
 static ads_state_t ads_state = ADS_STATE_INIT;  // State of the almanac demodulation service
 
 /*
@@ -176,13 +173,6 @@ static ads_state_t ads_state = ADS_STATE_INIT;  // State of the almanac demodula
  *  Several events may have to be read from the modem when this callback is called.
  */
 static void modem_event_callback( void );
-
-/**
- * @brief User callback for button EXTI
- *
- * @param context Define by the user at the init
- */
-static void user_button_callback( void* context );
 
 /**
  * @brief Read the LR11xx firmware version to ensure it is compatible with the almanac update
@@ -208,6 +198,10 @@ void main_geolocation( void )
     // Configure all the µC periph (clock, gpio, timer, ...)
     hal_mcu_init( );
 
+    // Initialize LEDs and button
+    hal_led_init( );
+    hal_button_init( NULL, NULL );
+
     SMTC_HAL_TRACE_INFO( "GEOLOCATION example is starting\n" );
 
     // Init the modem and use modem_event_callback as event callback, please note that the callback will be
@@ -216,23 +210,15 @@ void main_geolocation( void )
 
     smtc_modem_init( &modem_event_callback );
 
-    // Configure Nucleo blue button as EXTI
-    hal_gpio_irq_t nucleo_blue_button = {
-        .pin      = EXTI_BUTTON,
-        .context  = NULL,                  // context pass to the callback - not used in this example
-        .callback = user_button_callback,  // callback called when EXTI is triggered
-    };
-    hal_gpio_init_in( EXTI_BUTTON, BSP_GPIO_PULL_MODE_NONE, BSP_GPIO_IRQ_MODE_FALLING, &nucleo_blue_button );
-
     // Re-enable IRQ
     hal_mcu_enable_irq( );
 
     while( 1 )
     {
         // Check button
-        if( user_button_is_press == true )
+        if( hal_button_is_pressed( ) )
         {
-            user_button_is_press = false;
+            hal_button_clear( );
             if( ads_state == ADS_STATE_STARTED )
             {
                 ads_state = ADS_STATE_STOPPED;
@@ -251,7 +237,7 @@ void main_geolocation( void )
 
         // Atomically check sleep conditions
         hal_mcu_disable_irq( );
-        if( ( user_button_is_press == false ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
+        if( ( !hal_button_is_pressed( ) ) && ( smtc_modem_is_irq_flag_pending( ) == false ) )
         {
             hal_watchdog_reload( );
             hal_mcu_set_sleep_for_ms( MIN( sleep_time_ms, WATCHDOG_RELOAD_PERIOD_MS ) );
@@ -435,22 +421,6 @@ static void modem_event_callback( void )
             break;
         }
     } while( event_pending_count > 0 );
-}
-
-static void user_button_callback( void* context )
-{
-    SMTC_HAL_TRACE_INFO( "Button pushed\n" );
-
-    ( void ) context;  // Not used in the example - avoid warning
-
-    static uint32_t last_press_timestamp_ms = 0;
-
-    // Debounce the button press, avoid multiple triggers
-    if( ( int32_t ) ( smtc_modem_hal_get_time_in_ms( ) - last_press_timestamp_ms ) > 500 )
-    {
-        last_press_timestamp_ms = smtc_modem_hal_get_time_in_ms( );
-        user_button_is_press    = true;
-    }
 }
 
 static bool check_lr11xx_fw_version( void )

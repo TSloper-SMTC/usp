@@ -1,12 +1,15 @@
 # Unified Software Platform (USP)
 
-> **USP RELEASE v1.0.0**
+> **USP RELEASE v1.1.1 - Experimental Feature Release**
+>
+> ⚠️ **Warning**: This preview release is not intended for production use. A stable release will be available soon
+
 
 ## Overview
 
 USP provides an abstraction layer for scheduling and managing multiple radio access across available modulations (LoRa, FSK, LR-FHSS, FLRC) and protocols (LoRaWAN). The library enables applications to request radio access, configure transmissions/receptions, and schedule operations with priority management.
 
-Current Version is v1.0.0:
+Current Version is v1.1.1:
 - [Changelog](CHANGELOG.md)
 - [known limitations](doc/KNOWN_LIMITATIONS.md)
 
@@ -19,12 +22,19 @@ The supported Semtech radios are:
 - buildable[<sup>1</sup>](#notes) on [LR11xx shield radios](https://www.semtech.com/products/wireless-rf/lora-connect/lr1121)
 - buildable[<sup>1</sup>](#notes) on [SX126x shield radios](https://www.semtech.com/products/wireless-rf/lora-connect/sx1262)
 
-The supported MCU boards are:
+The supported platforms are:
 - Validated[<sup>1</sup>](#notes) on STMicro NUCLEO-STM32L476RG
-- might work[<sup>1</sup>](#notes) on STMicro NUCLEO-STM32L073RZ
+- buildable[<sup>1</sup>](#notes) on Linux (x86/x86_64 native + ARM cross-compilation for Raspberry Pi, embedded Linux).
+  - For documentation, see the "Build Examples on ARM Linux" in the following chapters below
+  - if required, check also the [Linux Porting Documentation](examples/smtc_hal_linux/README.md) )
+  - Linux porting was only tested with **LR2021**. The radio_hal for other radios shall be implemented before use.
+- Experimental[<sup>1</sup>](#notes) on Renesas FPB-RA0E2 (R7FA0E209, see [FPB-RA0E2 Porting Documentation](examples/smtc_hal_ra0e2/README.md))
+  - only tested with LoRa Plus EVK (LR2021)
+  - only tested with porting_tests & periodical_uplink applications (CLASS A, US915 region)
+- Experimental[<sup>1</sup>](#notes) on STMicro NUCLEO-STM32L073RZ
 
 #### Notes
-> **<sup>1</sup>** `Validated` : passed the Semtech nominal validation process, `Buildable` : can be compiled but did not go through full Semtech validation process and can be considered experimental, `might work` : was compiled and tested on `periodical_pulink` sample only with low validation
+> **<sup>1</sup>** `Validated` : passed the Semtech nominal validation process, `Buildable` : can be compiled but did not go through full Semtech validation process, `Experimental` : was compiled and tested on `periodical_pulink` sample only with low validation
 >
 > **<sup>2</sup>WIO-LR2021 CN version** ⚠️
 > For WIO-LR2021 China (CN) versions the PA table configuration shall be adjusted as defined in LR2021 Datasheet page 134 to (CN - 490Mhz) band for optimal performances. Refer to [USP Porting Guide](doc/usp_porting_guide.md) for more details.
@@ -36,7 +46,7 @@ The supported MCU boards are:
 | **USP/RAC Library** | Radio Access Component (RAC) API for Semtech transceiver management, including also RAL & Semtec Radio Drivers | **[View Full API Documentation →](smtc_rac_lib/README.md)** |
 | **LoRa Basics Modem** | Integrated LoRaWAN stack (v4.9.0) | **[LBM User Guide →](protocols/lbm_lib/README.md)** |
 | **Semtec Radio Drivers** | Legacy Drivers for supported Semtec Radios | **[Semtec Radio Drivers](smtc_rac_lib/radio_drivers)**
-| **Examples Core** | Sample applications demonstrating RAC API usage that can be compiled for baremetal and are also used by USP Zephyr | **[USP / USP Zephyr Samples Common Guide →](https://github.com/Lora-net/usp_zephyr/blob/main/samples/usp)** |
+| **Examples Core** | Sample applications demonstrating RAC API usage that can be compiled for baremetal | **[USP Samples Guide →](examples/main_examples)** |
 
 The architecture is described with more detailed in the [USP Zephyr repository](https://github.com/Lora-net/usp_zephyr/blob/main/doc/USP_Architecture.md)
 
@@ -61,19 +71,21 @@ The USP software was tested with:
 
 ### Available Applications
 
-The Samples documentation is available here : **[USP / USP Zephyr Samples Common Guide →](https://github.com/Lora-net/usp_zephyr/blob/main/samples/usp)**.<br>
-The following applications are available in the [examples/](examples/)` directory:
+The Samples & documentation &re available here : **[USP Samples Guide →](examples/main_examples)**.<br>
 
 #### Ranging (RTToF)
+
 - **`rttof_manager`**: RTToF ranging manager device
 - **`rttof_subordinate`**: RTToF ranging subordinate device
 
 #### Communication Examples
+
 - **`ping_pong`**: Ping-pong communication example
 - **`periodical_uplink`**: Periodical uplink transmission example
 - **`multiprotocol`**: Multiprotocol example (LoRa + Ranging)
 
 #### Packet Error Rate (PER) Tests
+
 - **`per_tx`**: LoRa packet error rate - transmitter
 - **`per_rx`**: LoRa packet error rate - receiver
 - **`per_fsk_tx`**: FSK packet error rate - transmitter
@@ -82,17 +94,31 @@ The following applications are available in the [examples/](examples/)` director
 - **`per_flrc_rx`**: FLRC packet error rate - receiver
 
 #### Modulation Examples
+
 - **`lrfhss_tx`**: LR-FHSS transmission example
 
 #### Certification & Testing
+
+- **`rf_certification_etsi`**: RF certification for ETSI region
+- **`rf_certification_arib`**: RF certification for ARIB region
+- **`rf_certification_fcc`**: RF certification for FCC region
 - **`lctt_certif`**: LCTT certification example
+- **`porting_tests`**: porting test example
+
 
 #### Advanced Examples
+
 - **`spectral_scan`**: Spectral scan analysis example
 - **`tx_cw`**: Continuous wave transmission example
 - **`direct_driver_access`**: Direct radio driver access example (Use RAL or Drivers API instead of USP/RAC API to manage radio, and fine-tune radio sleeping operations)
+- **`immediate_radio_access`**: Immediate radio access example (Use USP/RAC API to manage radio)
 - **`geolocation`**: Manage geolocation of LR1110 & LR1120 radio family
+- **`lr11xx_flasher`**: Manage flashing of LR1110 & LR1120 radio family
+- **`full_almanac_update`**: Manage almanac update of LR1110 & LR1120 radio family
+- **`wifi_region_detect`**: Manage wifi region detection for LR1110 & LR1120 radio family
 - **`hw_modem`**: Drive USP based MCU through UART (only LBM is currently stable)
+- **`cad`**: Channel Activity Detection example
+
 
 ### Build Basics
 
@@ -125,9 +151,15 @@ Have a look on cmake trace to get the list of "Available Applications" targets
 --   - porting_tests          : Porting_tests example
 --   - lctt_certif            : LCTT certification example
 --   - geolocation            : geolocation example
---   - tx_cw            : continuous transmission (TX CW) example
---   - direct_driver_access : direct radio driver access example
---   - cad              : CAD (Channel Activity Detection) example
+--   - lr11xx_flasher         : LR11xx flasher example
+--   - full_almanac_update    : full almanac update example
+--   - wifi_region_detection  : WiFi region detection example
+--   - rf_certification_etsi  : RF certification continuous LoRa TX example (ETSI region)
+--   - rf_certification_arib  : RF certification continuous LoRa TX example (ARIB region)
+--   - rf_certification_fcc   : RF certification continuous LoRa TX example (FCC region)
+--   - tx_cw                  : continuous transmission (TX CW) example
+--   - direct_driver_access   : direct radio driver access example
+--   - cad                    : CAD (Channel Activity Detection) example
 ```
 
 For example to compile `periodical_uplink` both `example` & `periodical_uplink` targets can be used :
@@ -146,10 +178,10 @@ rm -Rf build/ ; cmake -L -S examples  -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DB
 
 One more example with rttof example:
 ```
-rm -Rf build/ ; cmake -L -S examples  -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DBOARD=NUCLEO_L476 -DRAC_RADIO=lr2021 -DRANGING_DEVICE_MODE=SUBORDINATE -DCONTINUOUS_RANGING=false -G Ninja; cmake --build build --target rttof_subordinate
+rm -Rf build/ ; env CFLAGS="-DCONTINUOUS_RANGING=false" cmake -L -S examples  -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DBOARD=NUCLEO_L476 -DRAC_RADIO=lr2021 -UCMAKE_C_FLAGS -G Ninja; cmake --build build --target rttof_subordinate
 ```
 
-geolocation & hw_modem are not included in `all_examples` target. They shall be compiled whatever the `example`, `hw_modem`, or `geolocation` by specifying the `-DAPP=xxx` cmake symbol in order to force the GEOLOCATION cmake symbols by default :
+geolocation, full_almanac_update, wifi_region_detection & hw_modem are not included in `all_examples` target. They shall be compiled whatever the `example`, `geolocation`, `full_almanac_update`, `wifi_region_detection`, `hw_modem` by specifying the `-DAPP=xxx` cmake symbol in order to force the GEOLOCATION cmake symbols by default :
 - geolocation for lr1120:
 
 ``` bash
@@ -254,14 +286,81 @@ rm -Rf build/ ; cmake -L -S examples  -B build -DAPP=PERIODICAL_UPLINK -DCMAKE_B
 ```
 
 Options
-- **`RAC_RADIO`**: Target radio (`sx1261`, `sx1262`, `sx1268`, `lr1110`, `lr1120`, `lr1121`, `lr2021`)
-- **`BOARD`**: Target MCU : NUCLEO_L476
+
+- **`RAC_RADIO`**: Target radio (`sx1261`, `sx1262`, `sx1268`, `lr1110`, `lr1120`, `lr1121`, `lr2021`, `udp_pf`)
+- **`BOARD`**: Target platform: `NUCLEO_L476`, `NUCLEO_L073`, `FPB_RA0E2`, `LINUX`, or `LINUX_ARM`
 - Other options are related to examples
 
 Example of `openocd`command to flash:
 ```
 openocd -f interface/stlink.cfg -f target/stm32l4x.cfg -c "adapter serial 0671FF495648807567102644" -c "program build/periodical_uplink verify reset exit"
 ```
+
+---
+
+### Build Examples on ARM Linux (Raspberry Pi) with LR2021 Radio
+
+For deployment on ARM Linux devices with physical LR2021 radio:
+
+```bash
+# Cross-compile for ARM with LR2021 radio
+rm -Rf build/
+cmake -S examples -B build \
+  -DAPP=PERIODICAL_UPLINK \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
+  -DBOARD=LINUX_ARM \
+  -DRAC_RADIO=lr2021 \
+  -G Ninja
+
+cmake --build build --target periodical_uplink
+
+# Transfer to target device
+scp build/periodical_uplink pi@raspberrypi.local:~/
+```
+
+**Prerequisites:**
+- SPI enabled: `/dev/spidev0.0`
+- GPIO access: `/dev/gpiochip0`
+- User in `spi` and `gpio` groups
+
+**For detailed Linux HAL implementation and hardware setup, see** → [Linux HAL Documentation](examples/smtc_hal_linux/README.md)
+
+---
+
+### Build Examples on Native Linux with Virtual Radio (UDP_PF)
+
+The virtual radio (`udp_pf`) implements the Semtech UDP Packet Forwarder protocol to connect directly to a LoRaWAN Network Server (TTN, ChirpStack, etc.) without physical radio hardware or gateway. Suitable for development, testing, and CI/CD integration.
+
+Configure via environment variables:
+
+```bash
+# Build with virtual radio (native x86/x86_64)
+rm -Rf build/
+cmake -S examples -B build \
+  -DAPP=PERIODICAL_UPLINK \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
+  -DBOARD=LINUX \
+  -DRAC_RADIO=udp_pf \
+  -G Ninja
+
+cmake --build build --target periodical_uplink
+
+# Run the application
+./build/periodical_uplink
+
+# Configure server address/port and gateway EUI (optional)
+UDP_PF_SERVER_ADDR=eu1.cloud.thethings.network \
+UDP_PF_SERVER_PORT=1700 \
+UDP_PF_GATEWAY_EUI=AA555AFFFE000000 \
+./build/periodical_uplink
+```
+
+**Environment variables for configuration:**
+- `UDP_PF_SERVER_ADDR` - Network server address (default: `127.0.0.1`)
+- `UDP_PF_SERVER_PORT` - Network server port (default: `1700`)
+- `UDP_PF_GATEWAY_EUI` - Gateway EUI identifier (default: `000000FFFE000000`)
+
+---
 
 ### Build & flash periodical_uplink on NUCLEO-L073RZ
 
@@ -290,7 +389,7 @@ Note : Not all examples are compiling on NUCLEO-L073RZ. Only periodical_uplink w
 
 ## Samples
 
-More details and how to build & use Samples are available on [USP Zephyr Sample Documentation](https://github.com/Lora-net/usp_zephyr/blob/main/samples/usp)
+More details and how to build & use Samples are available on [USP Sample Documentation](/examples/main_examples/README.md)
 
 ## Porting Guide
 
@@ -314,21 +413,25 @@ If not sufficient to understand the issue, a debugger can be used to find out th
 Main RAC API Panics are:
 
 ### `ERROR: Modem panic: rp_hook_init:<line number>`
+
 This error occurs when invoking `smtc_rac_open_radio(priority)` a second time with the same priority.
 It comes from the file `smtc_rac_lib/radio_planner/src/radio_planner.c`, in the function `rp_hook_init`.
 To fix it, please make sure that no two calls to `smtc_rac_open_radio` have the same priority.
 
 ### `ERROR: Modem panic: radio_access_id is out of range`
+
 This error occurs when using an invalid `radio_access_id` as a parameter in API functions requiring it.
 To fix it, ensure that you use an ID returned by `smtc_rac_open_radio()` and that no `smtc_rac_close_radio()` were called with it.
 
 ### `ERROR: Modem panic: smtc_rac_submit_radio_transaction:<line number>`
+
 This error occurs when one field member in `smtc_rac_context_t` associated with the radio ID has been filled incorrectly, usually the size of the RX buffer.
 It comes from the file `smtc_rac_lib/smtc_rac/smtc_rac.c`, in the function `smtc_rac_submit_radio_transaction`.
 To fix it, ensure that `size_of_rx_payload_buffer` is greater or equal to `max_rx_size` of the selected modulation.
 For example, in LoRa, ensure `ctx->smtc_rac_data_buffer_setup.size_of_rx_payload_buffer >= ctx->radio_params.lora.max_rx_size`.
 
 ### `HARDFAULT_Handler`
+
 This error usually occurs when invoking a NULL callback.
 It might comes from the file `smtc_rac_lib/smtc_rac/smtc_rac.c`, in the function `smtc_rac_rp_callback`.
 To fix it, ensure that `ctx->scheduler_config.callback_post_radio_transaction != NULL`.

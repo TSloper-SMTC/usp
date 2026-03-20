@@ -48,6 +48,7 @@ extern "C" {
 #include <stdbool.h>
 #include "lr20xx_status.h"
 #include "lr20xx_radio_fsk_common_types.h"
+#include "lr20xx_radio_fifo_types.h"
 
 /*
  * -----------------------------------------------------------------------------
@@ -150,6 +151,41 @@ lr20xx_status_t lr20xx_workarounds_bluetooth_le_phy_coded_frequency_drift_store_
  * @return Operation status
  */
 lr20xx_status_t lr20xx_workarounds_bluetooth_le_2mbps_preamble_length( const void* context );
+
+/**
+ * @brief Improve blocking performances for Bluetooth LE PHY coded
+ *
+ * This workaround is to be called after @ref lr20xx_radio_bluetooth_le_set_modulation_params and @ref
+ * lr20xx_radio_bluetooth_le_set_pkt_params if the @p phy value is @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB or
+ * @ref LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB.
+ *
+ * Note that @ref lr20xx_radio_bluetooth_le_set_modulation_pkt_params automatically calls this workaround.
+ *
+ * @param context Chip implementation context
+ * @return Operation status
+ *
+ * @see lr20xx_radio_bluetooth_le_set_modulation_params, lr20xx_radio_bluetooth_le_set_pkt_params,
+ * lr20xx_radio_bluetooth_le_set_modulation_pkt_params,
+ * lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking_store_retention_mem
+ */
+lr20xx_status_t lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking( const void* context );
+
+/**
+ * @brief Store the Bluetooth LE PHY coded improve blocking workaround in retention memory
+ *
+ * Calling this function allows to store the Bluetooth LE PHY coded improve blocking workaround state during sleep mode.
+ * This helper function internally calls @ref lr20xx_system_add_register_to_retention_mem with the appropriate register
+ * address.
+ *
+ * @param context Chip implementation context
+ * @param slot Index in the storage list. Allowed values [0:31]
+ *
+ * @return Operation status
+ *
+ * @see lr20xx_system_add_register_to_retention_mem, lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking
+ */
+lr20xx_status_t lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking_store_retention_mem( const void* context,
+                                                                                                uint8_t     slot );
 
 /**
  * @brief Enable LoRa compatibility mode with SX1276
@@ -481,6 +517,57 @@ lr20xx_status_t lr20xx_workarounds_rttof_extended_stuck_second_request_disable( 
  */
 lr20xx_status_t lr20xx_workarounds_rttof_extended_stuck_second_request_store_retention_mem( const void* context,
                                                                                             uint8_t     slot );
+
+/*!
+ * @brief Workaround helper to configure FIFO events and threshold levels with 1024-byte Tx/Rx FiFos
+ *
+ * This workaround wraps @ref lr20xx_radio_fifo_cfg_irq when using 1024-byte Rx/Tx FiFos to allow settings @p
+ * tx_fifo_low_threshold and @p rx_fifo_low_threshold to value superior to 256.
+ *
+ * This workaround configures registers that are not maintained in memory during sleep mode. Call @ref
+ * lr20xx_workarounds_1024_byte_fifo_cfg_irq_store_retention_mem to register these registers as maintained during sleep
+ * mode.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] rx_fifo_irq_enable FIFO events triggering an interrupt in Rx
+ * @param [in] tx_fifo_irq_enable FIFO events triggering an interrupt in Tx
+ * @param [in] rx_fifo_high_threshold Rx FIFO threshold above which an interrupt (if
+ * LR20XX_RADIO_FIFO_FLAG_THRESHOLD_HIGH is enabled) is triggered
+ * @param [in] tx_fifo_low_threshold Tx FIFO threshold below which an interrupt (if LR20XX_RADIO_FIFO_FLAG_THRESHOLD_LOW
+ * is enabled) is triggered
+ * @param [in] rx_fifo_low_threshold Rx FIFO threshold below which an interrupt (if LR20XX_RADIO_FIFO_FLAG_THRESHOLD_LOW
+ * is enabled) is triggered
+ * @param [in] tx_fifo_high_threshold Tx FIFO threshold above which an interrupt (if
+ * LR20XX_RADIO_FIFO_FLAG_THRESHOLD_HIGH is enabled) is triggered
+ *
+ * @returns Operation status
+ *
+ * @see lr20xx_radio_fifo_cfg_irq, lr20xx_radio_fifo_configure_1024_byte_tx_fifo,
+ * lr20xx_radio_fifo_configure_1024_byte_rx_fifo
+ */
+lr20xx_status_t lr20xx_workarounds_1024_byte_fifo_cfg_irq(
+    const void* context, lr20xx_radio_fifo_flag_t rx_fifo_irq_enable, lr20xx_radio_fifo_flag_t tx_fifo_irq_enable,
+    uint16_t rx_fifo_high_threshold, uint16_t tx_fifo_low_threshold, uint16_t rx_fifo_low_threshold,
+    uint16_t tx_fifo_high_threshold );
+
+/**
+ * @brief Store the registers to configure the 1024 bytes Tx/Rx FiFos threshold related IRQs in retention memory
+ *
+ * Calling this function allows to store the workaround registers for IRQ FiFo configuration with 1024-byte Tx/Rx FiFos
+ * during sleep mode. This helper function internally calls @ref lr20xx_system_add_register_to_retention_mem with the
+ * appropriate register address.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] retention_slot_rx_thresholds Retention memory slot to store Rx FiFo thresholds
+ * @param [in] retention_slot_tx_thresholds Retention memory slot to store Tx FiFo thresholds
+ *
+ * @return Operation status
+ *
+ * @see lr20xx_system_add_register_to_retention_mem, lr20xx_workarounds_1024_byte_fifo_cfg_irq
+ */
+lr20xx_status_t lr20xx_workarounds_1024_byte_fifo_cfg_irq_store_retention_mem( const void* context,
+                                                                               uint8_t     retention_slot_rx_thresholds,
+                                                                               uint8_t retention_slot_tx_thresholds );
 
 #ifdef __cplusplus
 }

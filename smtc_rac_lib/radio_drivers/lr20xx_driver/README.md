@@ -24,8 +24,6 @@ The HAL (Hardware Abstraction Layer) is a collection of functions that the user 
 
 ## Workarounds
 
-The workarounds defined here are expected to be used for LR20xx engineering samples (date code: `2513`, version `0x0110`).
-
 Workarounds are defined in files [lr20xx_workarounds.h](inc/lr20xx_workarounds.h) and [lr20xx_workarounds.c](src/lr20xx_workarounds.c) when appropriate.
 
 ### Bluetooth LE Coded PHY Access Address
@@ -57,6 +55,18 @@ By default this configuration is not retained in memory when entering sleep mode
 The default preamble length for Bluetooth LE mode phy `LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_2M` is incorrect. To address this issue, the workaround function `lr20xx_workarounds_bluetooth_le_2mbps_preamble_length` must be called after `lr20xx_radio_bluetooth_le_set_modulation_params`.
 
 The function `lr20xx_radio_bluetooth_le_set_modulation_params` automatically applies the workaround `lr20xx_workarounds_bluetooth_le_2mbps_preamble_length`, unless the macro `LR20XX_WORKAROUND_DISABLE_AUTOMATIC_BLE_2MBPS_PREAMBLE_LENGTH` is defined.
+
+### Bluetooth LE Coded PHY blocking RF performance
+
+Degraded RF blocking performance may be observed with Bluetooth LE Coded PHY `LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_500KB` and `LR20XX_RADIO_BLUETOOTH_LE_PHY_LE_CODED_125KB`.
+
+To workaround this issue, the function `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking` must be called after both `lr20xx_radio_bluetooth_le_set_modulation_params` and `lr20xx_radio_bluetooth_le_set_pkt_params`.
+
+Note that none of the functions `lr20xx_radio_bluetooth_le_set_modulation_params` or `lr20xx_radio_bluetooth_le_set_modulation_pkt_params` automatically calls `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking`.
+
+However, the function `lr20xx_radio_bluetooth_le_set_modulation_pkt_params` does call `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking`.
+
+The state of the workaround is not retained by default in retention memory when entering sleep mode. The function `lr20xx_workarounds_bluetooth_le_phy_coded_improve_blocking_store_retention_mem` allows to store it in a retention memory slot.
 
 ### SX1276 LoRa compatibility mode
 

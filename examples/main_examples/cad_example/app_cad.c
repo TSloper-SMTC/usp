@@ -41,6 +41,7 @@
 
 #include <stddef.h>
 #include "smtc_rac_api.h"
+#include "smtc_hal_led.h"
 #include "smtc_sw_platform_helper.h"
 #include "smtc_modem_hal.h"
 
@@ -188,12 +189,12 @@ void cad_on_button_press( void )
 
 static void pre_cad_callback( void )
 {
-    set_led( SMTC_PF_LED_TX, true );
+    hal_led_set( HAL_LED_TX, true );
 }
 
 static void post_cad_callback( rp_status_t status )
 {
-    set_led( SMTC_PF_LED_TX, false );
+    hal_led_set( HAL_LED_TX, false );
 
     // Increment CAD counter
     cad_count++;
@@ -203,7 +204,7 @@ static void post_cad_callback( rp_status_t status )
     case RP_STATUS_CAD_POSITIVE:
         cad_positive_count++;
         last_cad_positive = cad_count;
-        CAD_PRINT( ">>> CAD #%lu: POSITIVE ( %lu positive %lu, %lu negative, Last positive: #%lu)\n", cad_count,
+        CAD_PRINT( ">>> CAD #%lu: POSITIVE ( %lu positive, %lu negative, Last positive: #%lu)\n", cad_count,
                    cad_positive_count, cad_negative_count, last_cad_positive );
         break;
 
@@ -226,6 +227,14 @@ static void post_cad_callback( rp_status_t status )
         cad_positive_count++;
         CAD_PRINT( ">>> CAD #%lu: RX PACKET ( %lu positive, %lu negative, Last positive: #%lu)\n", cad_count,
                    cad_positive_count, cad_negative_count, last_cad_positive > 0 ? last_cad_positive : 0 );
+        CAD_PRINT( "Rssi: %d, Snr: %d\n", cad.transaction->smtc_rac_data_result.rssi_result,
+                   cad.transaction->smtc_rac_data_result.snr_result );
+        CAD_PRINT( "RX payload: " );
+        for( int i = 0; i < cad.transaction->smtc_rac_data_result.rx_size; i++ )
+        {
+            CAD_PRINT( "%02X ", cad_buffer[i] );
+        }
+        CAD_PRINT( "\n" );
         break;
     case RP_STATUS_RX_TIMEOUT:
         cad_positive_count++;

@@ -44,6 +44,7 @@
 
 #include <stddef.h>
 #include "smtc_rac_api.h"
+#include "smtc_hal_led.h"
 #include "smtc_sw_platform_helper.h"
 #include "smtc_modem_hal.h"
 
@@ -220,12 +221,12 @@ static void tx_cw_send_packet( void )
 static void pre_tx_callback( void )
 {
     TX_CW_PRINT( "usp/rac: transmission #%" PRIu32 " starting\n", tx_cw.packet_count );
-    set_led( SMTC_PF_LED_TX, true );
+    hal_led_set( HAL_LED_TX, true );
 }
 
 static void post_tx_callback( rp_status_t status )
 {
-    set_led( SMTC_PF_LED_TX, false );
+    hal_led_set( HAL_LED_TX, false );
 
     // Schedule next transmission if still running
     if( tx_cw.is_running )

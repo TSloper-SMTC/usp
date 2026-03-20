@@ -72,6 +72,11 @@ static DMA_HandleTypeDef hdma_usart4_rx;
 static UART_HandleTypeDef huart2;
 static UART_HandleTypeDef huart4;
 
+#define TRACE_RX_RING_SIZE 256
+static volatile uint8_t  trace_rx_ring[TRACE_RX_RING_SIZE];
+static volatile uint16_t trace_rx_head = 0;
+static volatile uint16_t trace_rx_tail = 0;
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
@@ -116,7 +121,7 @@ void trace_uart_init( void )
     huart2.Init.WordLength             = UART_WORDLENGTH_8B;
     huart2.Init.StopBits               = UART_STOPBITS_1;
     huart2.Init.Parity                 = UART_PARITY_NONE;
-    huart2.Init.Mode                   = UART_MODE_TX;
+    huart2.Init.Mode                   = UART_MODE_TX_RX;
     huart2.Init.HwFlowCtl              = UART_HWCONTROL_NONE;
     huart2.Init.OverSampling           = UART_OVERSAMPLING_16;
     huart2.Init.OneBitSampling         = UART_ONE_BIT_SAMPLE_DISABLE;
@@ -126,6 +131,10 @@ void trace_uart_init( void )
     {
         mcu_panic( );
     }
+
+    __HAL_UART_ENABLE_IT( &huart2, UART_IT_RXNE );
+    HAL_NVIC_SetPriority( USART2_IRQn, 1, 0 );
+    HAL_NVIC_EnableIRQ( USART2_IRQn );
 }
 
 void trace_uart_deinit( void )
@@ -245,6 +254,40 @@ void HAL_UART_MspDeInit( UART_HandleTypeDef* huart )
 void DMA2_Channel5_IRQHandler( void )
 {
     HAL_DMA_IRQHandler( &hdma_usart4_rx );
+}
+
+void USART2_IRQHandler( void )
+{
+    if( __HAL_UART_GET_FLAG( &huart2, UART_FLAG_ORE ) )
+    {
+        __HAL_UART_CLEAR_FLAG( &huart2, UART_CLEAR_OREF );
+    }
+    if( __HAL_UART_GET_FLAG( &huart2, UART_FLAG_RXNE ) )
+    {
+        uint8_t  byte = ( uint8_t )( huart2.Instance->RDR & 0xFF );
+        uint16_t next = ( trace_rx_head + 1 ) % TRACE_RX_RING_SIZE;
+        if( next != trace_rx_tail )
+        {
+            trace_rx_ring[trace_rx_head] = byte;
+            trace_rx_head                = next;
+        }
+    }
+}
+
+bool trace_uart_rx_available( void )
+{
+    return trace_rx_head != trace_rx_tail;
+}
+
+int trace_uart_rx_getchar( void )
+{
+    if( trace_rx_head == trace_rx_tail )
+    {
+        return -1;
+    }
+    uint8_t byte  = trace_rx_ring[trace_rx_tail];
+    trace_rx_tail = ( trace_rx_tail + 1 ) % TRACE_RX_RING_SIZE;
+    return ( int ) byte;
 }
 
 /*

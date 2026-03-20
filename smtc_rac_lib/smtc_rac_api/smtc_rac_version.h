@@ -59,8 +59,8 @@ extern "C" {
  * --- PUBLIC TYPES ------------------------------------------------------------
  */
 #define USP_RAC_VERSION_MAJOR 1
-#define USP_RAC_VERSION_MINOR 0
-#define USP_RAC_VERSION_PATCH 0
+#define USP_RAC_VERSION_MINOR 1
+#define USP_RAC_VERSION_PATCH 1
 
 /*
  * -----------------------------------------------------------------------------
