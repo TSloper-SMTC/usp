@@ -442,7 +442,7 @@ static int sx126x_chip_apply_config( const radio_config_t* cfg )
                                                   : SX126X_LORA_PKT_EXPLICIT;
     pkt_params.pld_len_in_bytes     = 255; /* max */
     pkt_params.crc_is_on            = cfg->crc_on;
-    pkt_params.invert_iq_is_on      = false;
+    pkt_params.invert_iq_is_on      = cfg->invert_iq;
 
     rc = sx126x_set_lora_pkt_params( radio_context, &pkt_params );
     if( rc != SX126X_STATUS_OK )

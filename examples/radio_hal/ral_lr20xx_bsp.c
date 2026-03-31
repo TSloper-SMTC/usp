@@ -501,7 +501,7 @@ void ral_bsp_lr20xx_get_lfclk_cfg( const void* context, lr20xx_system_lfclk_cfg_
     *lfclk_cfg = LR20XX_SYSTEM_LFCLK_RC;
 }
 
-void ral_lr20xx_bsp_get_xosc_cp_trim( const void* context, uint8_t* xta, uint8_t* xtb, uint8_t* wait_time_us )
+void ral_lr20xx_bsp_get_xosc_trim( const void* context, uint8_t* xta, uint8_t* xtb, uint8_t* wait_time_us )
 {
     *xta          = LR20XX_XOSC_XTA;
     *xtb          = LR20XX_XOSC_XTB;

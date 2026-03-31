@@ -251,7 +251,7 @@ ral_status_t ral_lr20xx_init( const void* context )
     else if( xosc_cfg == RAL_XOSC_CFG_XTAL )
     {
         uint8_t xta, xtb, wait_time_us;
-        ral_lr20xx_bsp_get_xosc_cp_trim( context, &xta, &xtb, &wait_time_us );
+        ral_lr20xx_bsp_get_xosc_trim( context, &xta, &xtb, &wait_time_us );
         status = ( ral_status_t ) lr20xx_system_configure_xosc( context, xta, xtb, wait_time_us );
         if( status != RAL_STATUS_OK )
         {

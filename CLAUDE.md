@@ -139,6 +139,17 @@ cd examples/main_examples/radio_test_cli/doc
 weasyprint radio_test_cli_user_manual.html radio_test_cli_user_manual.pdf
 ```
 
+## radio_test_cli Display Conventions
+
+When adding or modifying CLI output in radio_test_cli, follow these rules for consistency:
+
+- **Disabling a feature:** Always use `off` (not `none`, `disabled`, etc.). Input may accept aliases like `none` for convenience, but display must show `off`.
+- **Byte counts:** Use `<N> bytes` (e.g. `2 bytes`, `4 bytes`), not `<N>B` or bare numbers.
+- **Hex values:** Always prefix with `0x` (e.g. `0x34`, `0xED592398`).
+- **Syncword index display:** Use `sw1`, `sw2`, `sw3` prefix style (not bare `1`, `2`, `3`).
+- **Units in status lines:** Always include the unit (`bits`, `bytes`, `symbols`, `kbps`, `kHz`, `dBm`, `ms`, `µs`).
+- **Parameter names shared across modulations** (`preamble`, `cr`, `crc`, `header`, `syncword`): The active modulation module owns the parameter. Each modulation defines its own valid values and display format independently.
+
 ## Key Configuration
 
 **Logging profiles** (cmake): `RAC_LOG_PROFILE` / `RAC_LIB_LOG_PROFILE` = `DEFAULT`, `MINIMAL`, `VERBOSE`, `ALL`, `OFF`

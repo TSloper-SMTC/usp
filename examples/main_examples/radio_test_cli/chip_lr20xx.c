@@ -253,6 +253,16 @@ static lr20xx_radio_lora_cr_t map_cr( coding_rate_t cr )
         return LR20XX_RADIO_LORA_CR_4_7;
     case CODING_RATE_4_8:
         return LR20XX_RADIO_LORA_CR_4_8;
+    case CODING_RATE_LI_4_5:
+        return LR20XX_RADIO_LORA_CR_LI_4_5;
+    case CODING_RATE_LI_4_6:
+        return LR20XX_RADIO_LORA_CR_LI_4_6;
+    case CODING_RATE_LI_4_8:
+        return LR20XX_RADIO_LORA_CR_LI_4_8;
+    case CODING_RATE_LI_CONV_4_6:
+        return LR20XX_RADIO_LORA_CR_LI_CONVOLUTIONAL_4_6;
+    case CODING_RATE_LI_CONV_4_8:
+        return LR20XX_RADIO_LORA_CR_LI_CONVOLUTIONAL_4_8;
     default:
         return LR20XX_RADIO_LORA_CR_4_5;
     }
@@ -315,6 +325,45 @@ static lr20xx_radio_flrc_pulse_shape_t map_flrc_bt( flrc_bt_t bt )
     }
 }
 
+static lr20xx_radio_flrc_preamble_len_t map_flrc_preamble( flrc_preamble_t p )
+{
+    switch( p )
+    {
+    case FLRC_PREAMBLE_4:   return LR20XX_RADIO_FLRC_PREAMBLE_LEN_04_BITS;
+    case FLRC_PREAMBLE_8:   return LR20XX_RADIO_FLRC_PREAMBLE_LEN_08_BITS;
+    case FLRC_PREAMBLE_12:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_12_BITS;
+    case FLRC_PREAMBLE_16:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_16_BITS;
+    case FLRC_PREAMBLE_20:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_20_BITS;
+    case FLRC_PREAMBLE_24:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_24_BITS;
+    case FLRC_PREAMBLE_28:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_28_BITS;
+    case FLRC_PREAMBLE_32:  return LR20XX_RADIO_FLRC_PREAMBLE_LEN_32_BITS;
+    default:                return LR20XX_RADIO_FLRC_PREAMBLE_LEN_32_BITS;
+    }
+}
+
+static lr20xx_radio_flrc_sync_word_len_t map_flrc_sw_len( flrc_sw_len_t sw )
+{
+    switch( sw )
+    {
+    case FLRC_SW_LEN_OFF: return LR20XX_RADIO_FLRC_SYNCWORD_LENGTH_OFF;
+    case FLRC_SW_LEN_2:   return LR20XX_RADIO_FLRC_SYNCWORD_LENGTH_2_BYTES;
+    case FLRC_SW_LEN_4:   return LR20XX_RADIO_FLRC_SYNCWORD_LENGTH_4_BYTES;
+    default:              return LR20XX_RADIO_FLRC_SYNCWORD_LENGTH_4_BYTES;
+    }
+}
+
+static lr20xx_radio_flrc_crc_types_t map_flrc_crc( flrc_crc_t crc )
+{
+    switch( crc )
+    {
+    case FLRC_CRC_OFF: return LR20XX_RADIO_FLRC_CRC_OFF;
+    case FLRC_CRC_2:   return LR20XX_RADIO_FLRC_CRC_2_BYTES;
+    case FLRC_CRC_3:   return LR20XX_RADIO_FLRC_CRC_3_BYTES;
+    case FLRC_CRC_4:   return LR20XX_RADIO_FLRC_CRC_4_BYTES;
+    default:           return LR20XX_RADIO_FLRC_CRC_2_BYTES;
+    }
+}
+
 /*
  * --- chip_driver_t implementation ---
  */
@@ -370,7 +419,7 @@ static int lr20xx_chip_init( void )
         if( xosc_cfg == RAL_XOSC_CFG_XTAL )
         {
             uint8_t xta, xtb, wait_us;
-            ral_lr20xx_bsp_get_xosc_cp_trim( radio_context, &xta, &xtb, &wait_us );
+            ral_lr20xx_bsp_get_xosc_trim( radio_context, &xta, &xtb, &wait_us );
             rc = lr20xx_system_configure_xosc( radio_context, xta, xtb, wait_us );
             if( rc != LR20XX_STATUS_OK )
             {
@@ -569,13 +618,14 @@ static int lr20xx_apply_config( const radio_config_t* cfg )
         /* 4b. Packet params — must be set BEFORE syncwords so the chip knows
          *     the syncword length and match mode when syncword bytes are written. */
         lr20xx_radio_flrc_pkt_params_t pkt_params = { 0 };
-        pkt_params.preamble_len     = LR20XX_RADIO_FLRC_PREAMBLE_LEN_32_BITS;
-        pkt_params.sync_word_len    = LR20XX_RADIO_FLRC_SYNCWORD_LENGTH_4_BYTES;
-        pkt_params.tx_syncword      = LR20XX_RADIO_FLRC_TX_SYNCWORD_1;
-        pkt_params.match_sync_word  = LR20XX_RADIO_FLRC_RX_MATCH_SYNCWORD_1;
-        pkt_params.header_type      = LR20XX_RADIO_FLRC_PKT_VAR_LEN;
+        pkt_params.preamble_len     = map_flrc_preamble( cfg->flrc_preamble );
+        pkt_params.sync_word_len    = map_flrc_sw_len( cfg->flrc_sw_len );
+        pkt_params.tx_syncword      = ( lr20xx_radio_flrc_tx_syncword_t ) cfg->flrc_tx_sw;
+        pkt_params.match_sync_word  = ( lr20xx_radio_flrc_rx_match_sync_word_t ) cfg->flrc_rx_sw;
+        pkt_params.header_type      = cfg->flrc_header_fixed ? LR20XX_RADIO_FLRC_PKT_FIX_LEN
+                                                             : LR20XX_RADIO_FLRC_PKT_VAR_LEN;
         pkt_params.pld_len_in_bytes = 255;
-        pkt_params.crc_type         = LR20XX_RADIO_FLRC_CRC_2_BYTES;
+        pkt_params.crc_type         = map_flrc_crc( cfg->flrc_crc );
 
         rc = lr20xx_radio_flrc_set_pkt_params( radio_context, &pkt_params );
         if( rc != LR20XX_STATUS_OK )
@@ -601,12 +651,11 @@ static int lr20xx_apply_config( const radio_config_t* cfg )
         }
 
         /* 4d. Syncwords — write all 3 to match demo RX path and avoid stale
-         *     register state.  TX uses syncword 1; RX matches syncword 1.
-         *     Syncwords 2/3 are zeroed so the correlator has clean state. */
-        static const uint8_t flrc_syncword[LR20XX_RADIO_FLRC_SYNCWORD_LENGTH]    = { 0x90, 0x56, 0x34, 0x12 };
+         *     register state.  Register 1 uses user config; registers 2/3 are
+         *     zeroed so the correlator has clean state. */
         static const uint8_t flrc_syncword_zero[LR20XX_RADIO_FLRC_SYNCWORD_LENGTH] = { 0x00, 0x00, 0x00, 0x00 };
 
-        rc = lr20xx_radio_flrc_set_syncword( radio_context, 1, flrc_syncword );
+        rc = lr20xx_radio_flrc_set_syncword( radio_context, 1, cfg->flrc_syncword );
         if( rc != LR20XX_STATUS_OK )
         {
             return -1;
@@ -683,7 +732,8 @@ static int lr20xx_apply_config( const radio_config_t* cfg )
             pkt_params.pld_len_in_bytes     = 255; /* max for RX */
             pkt_params.crc = cfg->crc_on ? LR20XX_RADIO_LORA_CRC_ENABLED
                                          : LR20XX_RADIO_LORA_CRC_DISABLED;
-            pkt_params.iq                   = LR20XX_RADIO_LORA_IQ_STANDARD;
+            pkt_params.iq = cfg->invert_iq ? LR20XX_RADIO_LORA_IQ_INVERTED
+                                           : LR20XX_RADIO_LORA_IQ_STANDARD;
 
             cached_lora_pkt_params = pkt_params;
 
@@ -762,11 +812,24 @@ static int lr20xx_start_tx( const uint8_t* payload, uint8_t len, uint32_t timeou
 {
     lr20xx_status_t rc;
 
-    /* Update pld_len_in_bytes for LoRa TX.  apply_config() sets 255 for RX,
+    /* Update pld_len_in_bytes before TX.  apply_config() sets 255 for RX,
      * but the LR20xx uses this register for TX length too.
-     * FLRC uses variable-length packets (PKT_VAR_LEN) — the length is
-     * embedded in the packet header, no register update needed. */
-    if( cached_modulation != MODULATION_FLRC )
+     * FLRC variable-length packets embed the length in the header so no
+     * update is needed, but fixed-length mode requires an explicit set. */
+    if( cached_modulation == MODULATION_FLRC )
+    {
+        if( cached_flrc_pkt_params.header_type == LR20XX_RADIO_FLRC_PKT_FIX_LEN )
+        {
+            lr20xx_radio_flrc_pkt_params_t pkt_params = cached_flrc_pkt_params;
+            pkt_params.pld_len_in_bytes = len;
+            rc = lr20xx_radio_flrc_set_pkt_params( radio_context, &pkt_params );
+            if( rc != LR20XX_STATUS_OK )
+            {
+                return -1;
+            }
+        }
+    }
+    else
     {
         lr20xx_radio_lora_pkt_params_t pkt_params = cached_lora_pkt_params;
         pkt_params.pld_len_in_bytes = len;
@@ -1154,8 +1217,6 @@ static uint32_t lr20xx_get_toa_ms( uint8_t pld_len )
     {
         lr20xx_radio_flrc_pkt_params_t pkt = cached_flrc_pkt_params;
         pkt.pld_len_in_bytes = pld_len;
-        pkt.crc_type    = LR20XX_RADIO_FLRC_CRC_OFF;
-        pkt.header_type = LR20XX_RADIO_FLRC_PKT_FIX_LEN;
         uint32_t us = lr20xx_get_flrc_time_on_air_in_us( &pkt, &cached_flrc_mod_params );
         return ( us + 999 ) / 1000;   /* round up µs → ms */
     }
@@ -1183,7 +1244,7 @@ static bool lr20xx_supports_region( region_id_t id )
 
 static void lr20xx_get_xosc_defaults( uint8_t* xta, uint8_t* xtb, uint8_t* wait_us )
 {
-    ral_lr20xx_bsp_get_xosc_cp_trim( radio_context, xta, xtb, wait_us );
+    ral_lr20xx_bsp_get_xosc_trim( radio_context, xta, xtb, wait_us );
 }
 
 static int lr20xx_apply_xosc_trim( uint8_t xta, uint8_t xtb, uint8_t wait_us )

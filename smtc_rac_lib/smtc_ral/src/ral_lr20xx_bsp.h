@@ -215,7 +215,7 @@ void ral_lr20xx_bsp_get_xosc_cfg( const void* context, ral_xosc_cfg_t* xosc_cfg,
  * @param [out] xtb          XTB foot capacitor trim (0=11.1 pF, +0.47 pF/LSB, max 47)
  * @param [out] wait_time_us Extra stabilization delay after RC→XOSC transition (µs)
  */
-void ral_lr20xx_bsp_get_xosc_cp_trim( const void* context, uint8_t* xta, uint8_t* xtb, uint8_t* wait_time_us );
+void ral_lr20xx_bsp_get_xosc_trim( const void* context, uint8_t* xta, uint8_t* xtb, uint8_t* wait_time_us );
 
 /**
  * @brief Get the Channel Activity Detection (CAD) DetPeak value

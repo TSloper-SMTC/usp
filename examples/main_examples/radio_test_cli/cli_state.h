@@ -63,6 +63,45 @@ typedef enum
 } flrc_bt_t;
 
 /**
+ * FLRC preamble length (discrete values only — chip hardware constraint).
+ * Maps to lr20xx_radio_flrc_preamble_len_t in chip_lr20xx.c.
+ */
+typedef enum
+{
+    FLRC_PREAMBLE_4  = 0,
+    FLRC_PREAMBLE_8,
+    FLRC_PREAMBLE_12,
+    FLRC_PREAMBLE_16,
+    FLRC_PREAMBLE_20,
+    FLRC_PREAMBLE_24,
+    FLRC_PREAMBLE_28,
+    FLRC_PREAMBLE_32,
+} flrc_preamble_t;
+
+/**
+ * FLRC syncword length.
+ * Maps to lr20xx_radio_flrc_sync_word_len_t in chip_lr20xx.c.
+ */
+typedef enum
+{
+    FLRC_SW_LEN_OFF = 0,
+    FLRC_SW_LEN_2,
+    FLRC_SW_LEN_4,
+} flrc_sw_len_t;
+
+/**
+ * FLRC CRC type.
+ * Maps to lr20xx_radio_flrc_crc_types_t in chip_lr20xx.c.
+ */
+typedef enum
+{
+    FLRC_CRC_OFF = 0,
+    FLRC_CRC_2,
+    FLRC_CRC_3,
+    FLRC_CRC_4,
+} flrc_crc_t;
+
+/**
  * AGC gain step — maps to lr20xx_radio_common_gain_step_t.
  * Common across all modulations and RX paths.
  */
@@ -105,6 +144,13 @@ typedef enum
     CODING_RATE_4_6,
     CODING_RATE_4_7,
     CODING_RATE_4_8,
+#ifndef SX126X
+    CODING_RATE_LI_4_5,
+    CODING_RATE_LI_4_6,
+    CODING_RATE_LI_4_8,
+    CODING_RATE_LI_CONV_4_6,
+    CODING_RATE_LI_CONV_4_8,
+#endif
 } coding_rate_t;
 
 /*
@@ -134,6 +180,7 @@ typedef struct radio_config_s
     uint8_t  syncword;     /* 0x12 or 0x34 */
     bool     header_implicit; /* true = implicit, false = explicit */
     bool     crc_on;          /* true = CRC enabled */
+    bool     invert_iq;       /* true = inverted IQ */
     int8_t   ldro;            /* -1 = auto, 0 = off, 1 = on */
 
     /* GFSK-specific (Phase 2) */
@@ -145,6 +192,15 @@ typedef struct radio_config_s
     uint16_t  flrc_br_kbps; /* 260, 325, 520, 650, 1040, 1300, 2080, 2600 */
     flrc_cr_t flrc_cr;
     flrc_bt_t flrc_bt;
+
+    /* FLRC packet parameters */
+    flrc_preamble_t flrc_preamble;  /* preamble length (4-32 bits, discrete) */
+    flrc_sw_len_t   flrc_sw_len;    /* syncword length: off, 2B, 4B */
+    uint8_t         flrc_tx_sw;     /* TX syncword index: 0=none, 1-3 */
+    uint8_t         flrc_rx_sw;     /* RX syncword match: 0=off, 1-7 (bitmask combo) */
+    bool            flrc_header_fixed; /* true=fixed length, false=variable */
+    flrc_crc_t      flrc_crc;       /* CRC type: off, 2B, 3B, 4B */
+    uint8_t         flrc_syncword[4]; /* syncword register 1 bytes (MSB first) */
 
     /* Active mode */
     active_mode_t active_mode;
@@ -200,6 +256,18 @@ const char* cli_state_flrc_cr_str( flrc_cr_t cr );
 
 /** Get human-readable string for FLRC pulse shape */
 const char* cli_state_flrc_bt_str( flrc_bt_t bt );
+
+/** Get human-readable string for FLRC preamble length */
+const char* cli_state_flrc_preamble_str( flrc_preamble_t p );
+
+/** Get human-readable string for FLRC syncword length */
+const char* cli_state_flrc_sw_len_str( flrc_sw_len_t sw );
+
+/** Get human-readable string for FLRC CRC type */
+const char* cli_state_flrc_crc_str( flrc_crc_t crc );
+
+/** Get human-readable string for FLRC RX syncword match mode */
+const char* cli_state_flrc_rx_sw_str( uint8_t rx_sw );
 
 /** Get human-readable string for AGC gain step */
 const char* cli_state_agc_gain_str( agc_gain_t gain );

@@ -30,7 +30,20 @@ void cli_state_init( radio_config_t* cfg )
     cfg->syncword    = 0;
     cfg->header_implicit = false;
     cfg->crc_on          = true;
+    cfg->invert_iq       = false;
     cfg->ldro            = -1; /* auto */
+
+    /* FLRC packet param defaults */
+    cfg->flrc_preamble     = FLRC_PREAMBLE_32;
+    cfg->flrc_sw_len       = FLRC_SW_LEN_4;
+    cfg->flrc_tx_sw        = 1; /* use syncword 1 */
+    cfg->flrc_rx_sw        = 1; /* match syncword 1 */
+    cfg->flrc_header_fixed = false; /* variable length */
+    cfg->flrc_crc          = FLRC_CRC_2;
+    cfg->flrc_syncword[0]  = 0xED;
+    cfg->flrc_syncword[1]  = 0x59;
+    cfg->flrc_syncword[2]  = 0x23;
+    cfg->flrc_syncword[3]  = 0x98;
 
     /* PER defaults */
     cfg->per_count        = 100;
@@ -115,6 +128,18 @@ const char* cli_state_cr_str( coding_rate_t cr )
         return "4/7";
     case CODING_RATE_4_8:
         return "4/8";
+#ifndef SX126X
+    case CODING_RATE_LI_4_5:
+        return "LI 4/5";
+    case CODING_RATE_LI_4_6:
+        return "LI 4/6";
+    case CODING_RATE_LI_4_8:
+        return "LI 4/8";
+    case CODING_RATE_LI_CONV_4_6:
+        return "LI-Conv 4/6";
+    case CODING_RATE_LI_CONV_4_8:
+        return "LI-Conv 4/8";
+#endif
     default:
         return "?";
     }
@@ -149,6 +174,61 @@ const char* cli_state_flrc_bt_str( flrc_bt_t bt )
         return "bt1";
     default:
         return "?";
+    }
+}
+
+const char* cli_state_flrc_preamble_str( flrc_preamble_t p )
+{
+    switch( p )
+    {
+    case FLRC_PREAMBLE_4:   return "4";
+    case FLRC_PREAMBLE_8:   return "8";
+    case FLRC_PREAMBLE_12:  return "12";
+    case FLRC_PREAMBLE_16:  return "16";
+    case FLRC_PREAMBLE_20:  return "20";
+    case FLRC_PREAMBLE_24:  return "24";
+    case FLRC_PREAMBLE_28:  return "28";
+    case FLRC_PREAMBLE_32:  return "32";
+    default:                return "?";
+    }
+}
+
+const char* cli_state_flrc_sw_len_str( flrc_sw_len_t sw )
+{
+    switch( sw )
+    {
+    case FLRC_SW_LEN_OFF: return "off";
+    case FLRC_SW_LEN_2:   return "2 bytes";
+    case FLRC_SW_LEN_4:   return "4 bytes";
+    default:              return "?";
+    }
+}
+
+const char* cli_state_flrc_crc_str( flrc_crc_t crc )
+{
+    switch( crc )
+    {
+    case FLRC_CRC_OFF: return "off";
+    case FLRC_CRC_2:   return "2 bytes";
+    case FLRC_CRC_3:   return "3 bytes";
+    case FLRC_CRC_4:   return "4 bytes";
+    default:           return "?";
+    }
+}
+
+const char* cli_state_flrc_rx_sw_str( uint8_t rx_sw )
+{
+    switch( rx_sw )
+    {
+    case 0:  return "off";
+    case 1:  return "sw1";
+    case 2:  return "sw2";
+    case 3:  return "sw1|2";
+    case 4:  return "sw3";
+    case 5:  return "sw1|3";
+    case 6:  return "sw2|3";
+    case 7:  return "sw1|2|3";
+    default: return "?";
     }
 }
 
@@ -241,6 +321,6 @@ void cli_state_print_status( const radio_config_t* cfg )
         printf( "  PER config: count=%u  interval=%ums  payload=auto\n",
                 (unsigned) cfg->per_count, (unsigned) cfg->per_interval_ms );
     else
-        printf( "  PER config: count=%u  interval=%ums  payload=%uB\n",
+        printf( "  PER config: count=%u  interval=%ums  payload=%u bytes\n",
                 (unsigned) cfg->per_count, (unsigned) cfg->per_interval_ms, (unsigned) cfg->per_payload_size );
 }

@@ -145,12 +145,12 @@ static int per_tx_arm( radio_config_t* cfg, const chip_driver_t* chip )
 
     if( s->count == 0 )
     {
-        printf( "PER TX: infinite packets, %ums interval, %uB payload\n",
+        printf( "PER TX: infinite packets, %ums interval, %u byte payload\n",
                 (unsigned) s->interval_ms, (unsigned) s->pld_size );
     }
     else
     {
-        printf( "PER TX: %u packets, %ums interval, %uB payload\n",
+        printf( "PER TX: %u packets, %ums interval, %u byte payload\n",
                 (unsigned) s->count, (unsigned) s->interval_ms, (unsigned) s->pld_size );
     }
     if( cfg->modulation == MODULATION_FLRC )
@@ -780,7 +780,9 @@ static int mod_tx_arm( radio_config_t* cfg, const chip_driver_t* chip )
                 s->label, ( double ) cfg->freq_mhz, (unsigned) cfg->flrc_br_kbps,
                 cli_state_flrc_cr_str( cfg->flrc_cr ),
                 cli_state_flrc_bt_str( cfg->flrc_bt ), cfg->power_dbm );
-        printf( "  Fixed length, CRC off, payload=%u bytes, TOA=%u ms\n",
+        printf( "  Header: %s, CRC: %s, payload=%u bytes, TOA=%u ms\n",
+                cfg->flrc_header_fixed ? "fixed" : "variable",
+                cli_state_flrc_crc_str( cfg->flrc_crc ),
                 (unsigned) s->pld_size, (unsigned) toa_ms );
     }
     else
@@ -1259,7 +1261,10 @@ static int start_fhss( radio_config_t* cfg, const chip_driver_t* chip )
         printf( "  %ukbps/CR%s/BT%s  %+d dBm\n",
                 (unsigned) cfg->flrc_br_kbps, cli_state_flrc_cr_str( cfg->flrc_cr ),
                 cli_state_flrc_bt_str( cfg->flrc_bt ), cfg->power_dbm );
-        printf( "  Fixed length, CRC off, payload=%u bytes, TOA=%u ms\n", (unsigned) pld_size, (unsigned) toa_ms );
+        printf( "  Header: %s, CRC: %s, payload=%u bytes, TOA=%u ms\n",
+                cfg->flrc_header_fixed ? "fixed" : "variable",
+                cli_state_flrc_crc_str( cfg->flrc_crc ),
+                (unsigned) pld_size, (unsigned) toa_ms );
     }
     else
     {
@@ -1528,7 +1533,10 @@ static int start_hybrid( radio_config_t* cfg, const chip_driver_t* chip )
         printf( "  %ukbps/CR%s/BT%s  %+d dBm\n",
                 (unsigned) cfg->flrc_br_kbps, cli_state_flrc_cr_str( cfg->flrc_cr ),
                 cli_state_flrc_bt_str( cfg->flrc_bt ), cfg->power_dbm );
-        printf( "  Fixed length, CRC off, payload=%u bytes, TOA=%u ms\n", (unsigned) pld_size, (unsigned) toa_ms );
+        printf( "  Header: %s, CRC: %s, payload=%u bytes, TOA=%u ms\n",
+                cfg->flrc_header_fixed ? "fixed" : "variable",
+                cli_state_flrc_crc_str( cfg->flrc_crc ),
+                (unsigned) pld_size, (unsigned) toa_ms );
     }
     else
     {
