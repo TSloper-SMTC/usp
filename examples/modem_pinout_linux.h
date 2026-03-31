@@ -68,9 +68,15 @@ extern "C" {
 #define RADIO_DIO_MAIN RPI_GPIO27
 #endif
 
+#ifdef LR11XX_TRANSCEIVER
+#define SMTC_LED_TX   RPI_GPIO2   // Arduino A4
+#define SMTC_LED_RX   RPI_GPIO3   // Arduino A5
+#define SMTC_LED_SCAN RPI_GPIO7   // Arduino D4
+#else
 #define SMTC_LED_RX NC
 #define SMTC_LED_TX NC
 #define SMTC_LED_SCAN NC
+#endif
 
 #define EXTI_BUTTON NC
 

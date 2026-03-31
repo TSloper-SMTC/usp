@@ -31,6 +31,7 @@ typedef struct
     int32_t  snr_sum_raw;    /* raw ×4 units */
     int8_t   snr_min_raw;
     int8_t   snr_max_raw;
+    uint32_t tx_count;       /* rx: TX packet count (from TX header; 0 = unknown/infinite) */
     bool     is_tx_side;     /* which side ran */
     bool     has_snr;        /* false for modulations that have no SNR (e.g. FLRC) */
     bool     has_data;

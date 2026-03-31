@@ -197,6 +197,13 @@ static int cmd_region( const tokenized_t* tokens, radio_config_t* cfg, const chi
         return -1;
     }
 
+    /* Check runtime chip support (e.g. LR1110 does not support WW2G4) */
+    if( chip->supports_region != NULL && !chip->supports_region( region->id ) )
+    {
+        printf( "ERROR: Region '%s' is not supported by this chip\n", tokens->tokens[1] );
+        return -1;
+    }
+
     region_load_defaults( cfg, region );
     chip->refresh_pa_config( cfg );
 
@@ -385,7 +392,7 @@ static int cmd_power( const tokenized_t* tokens, radio_config_t* cfg, const chip
     return 0;
 }
 
-#ifndef SX126X
+#if defined( LR20XX )
 /*
  * --- Command: agc ---
  */
@@ -504,7 +511,7 @@ static int cmd_boost_hf( const tokenized_t* tokens, radio_config_t* cfg, const c
         printf( "RX boost HF: %d\n", cfg->rx_boost_hf );
     return 0;
 }
-#endif /* SX126X */
+#endif /* LR20XX */
 
 /*
  * --- Command: start ---
@@ -1009,6 +1016,7 @@ static int cmd_per( const tokenized_t* tokens, radio_config_t* cfg, const chip_d
     return -1;
 }
 
+#if defined( LR20XX )
 /*
  * --- Command: xosc ---
  *
@@ -1138,6 +1146,7 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
             tokens->tokens[1] );
     return -1;
 }
+#endif /* LR20XX */
 
 /*
  * --- Command: pld ---
@@ -1189,14 +1198,14 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
 #else
         printf( "  region <us|2g4>            Set region (loads defaults)\n" );
 #endif
-#ifdef SX126X
-        printf( "  modulation <type>          Set modulation (lora)\n" );
-#else
+#if defined( LR20XX )
         printf( "  modulation <type>          Set modulation (lora, flrc)\n" );
+#else
+        printf( "  modulation <type>          Set modulation (lora)\n" );
 #endif
         printf( "  freq <MHz>                 Frequency\n" );
         printf( "  power <dBm>                TX power\n" );
-#ifndef SX126X
+#if defined( LR20XX )
         printf( "  agc <auto|g1-g13>          AGC gain (auto or fixed step)\n" );
         printf( "  boost-lf <auto|0-7>        RX boost level for LF path (auto=0)\n" );
         printf( "  boost-hf <auto|0-7>        RX boost level for HF path (auto=4)\n" );
@@ -1223,7 +1232,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         printf( "\nPA config:\n" );
         printf( "  pa show                    Show PA parameters\n" );
         printf( "  pa <param> <value>         Set PA parameter (use 'pa show' to list)\n" );
-#ifndef SX126X
+#if defined( LR20XX )
         printf( "\nXOSC trim:\n" );
         printf( "  xosc show                  Show XTA/XTB/wait values\n" );
         printf( "  xosc default               Restore factory defaults\n" );
@@ -1389,7 +1398,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         return;
     }
 
-#ifndef SX126X
+#if defined( LR20XX )
     if( strcasecmp( topic, "agc" ) == 0 )
     {
         printf( "agc — AGC gain control (LR20xx only)\n" );
@@ -1521,6 +1530,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         return;
     }
 
+#if defined( LR20XX )
     if( strcasecmp( topic, "xosc" ) == 0 )
     {
         printf( "xosc — crystal oscillator capacitor trim (LR20xx only)\n" );
@@ -1549,6 +1559,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         printf( "  Example: xosc wait 200\n" );
         return;
     }
+#endif
 
     if( strcasecmp( topic, "show" ) == 0 )
     {
@@ -1590,7 +1601,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
 
     printf( "Unknown help topic '%s'. Available topics:\n", topic );
     printf( "  region, modulation, freq, power, pld, pa, per, start, show, delay\n" );
-#ifndef SX126X
+#if defined( LR20XX )
     printf( "  agc, boost-lf, boost-hf, xosc\n" );
 #endif
     if( active_mod != NULL && active_mod->param_names != NULL )
@@ -1655,7 +1666,7 @@ int cli_execute( const char* line, radio_config_t* cfg, const chip_driver_t* chi
         return cmd_freq( &tokens, cfg, chip );
     if( strcasecmp( cmd, "power" ) == 0 )
         return cmd_power( &tokens, cfg, chip );
-#ifndef SX126X
+#if defined( LR20XX )
     if( strcasecmp( cmd, "agc" ) == 0 )
         return cmd_agc( &tokens, cfg, chip );
     if( strcasecmp( cmd, "boost-lf" ) == 0 )
@@ -1673,8 +1684,10 @@ int cli_execute( const char* line, radio_config_t* cfg, const chip_driver_t* chi
         return cmd_pa( &tokens, cfg, chip );
     if( strcasecmp( cmd, "per" ) == 0 )
         return cmd_per( &tokens, cfg, chip );
+#if defined( LR20XX )
     if( strcasecmp( cmd, "xosc" ) == 0 )
         return cmd_xosc( &tokens, cfg, chip );
+#endif
     if( strcasecmp( cmd, "pld" ) == 0 )
         return cmd_pld( &tokens, cfg, chip );
     if( strcasecmp( cmd, "show" ) == 0 )
@@ -1725,12 +1738,12 @@ int cli_execute( const char* line, radio_config_t* cfg, const chip_driver_t* chi
 
 static const char* standard_commands[] = {
     "region", "modulation", "freq", "power",
-#ifndef SX126X
+#if defined( LR20XX )
     "agc", "boost-lf", "boost-hf",
 #endif
     "status", "start", "stop", "show", "pa",
     "per", "pld",
-#ifndef SX126X
+#if defined( LR20XX )
     "xosc",
 #endif
 #ifdef __linux__
@@ -1750,10 +1763,10 @@ static const char* show_subcmds[]  = { "channels", NULL };
 #ifndef __linux__
 static const char* term_subcmds[]  = { "ansi", "plain", NULL };
 #endif
-#ifndef SX126X
+#if defined( LR20XX )
 static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", "wait", NULL };
 #endif
-#ifndef SX126X
+#if defined( LR20XX )
 static const char* agc_completions[] = {
     "auto", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
     "g8", "g9", "g10", "g11", "g12", "g13", NULL
@@ -1897,7 +1910,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             mod_completions[j]   = NULL;
             values = mod_completions;
         }
-#ifndef SX126X
+#if defined( LR20XX )
         else if( strncasecmp( buf, "agc", cmd_len ) == 0 && cmd_len == 3 )
         {
             values = agc_completions;
@@ -1932,7 +1945,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
         {
             values = per_subcmds;
         }
-#ifndef SX126X
+#if defined( LR20XX )
         else if( strncasecmp( buf, "xosc", cmd_len ) == 0 && cmd_len == 4 )
         {
             values = xosc_subcmds;
@@ -1957,7 +1970,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             help_topics[j++] = "modulation";
             help_topics[j++] = "freq";
             help_topics[j++] = "power";
-#ifndef SX126X
+#if defined( LR20XX )
             help_topics[j++] = "agc";
             help_topics[j++] = "boost-lf";
             help_topics[j++] = "boost-hf";
@@ -1965,7 +1978,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             help_topics[j++] = "pld";
             help_topics[j++] = "pa";
             help_topics[j++] = "per";
-#ifndef SX126X
+#if defined( LR20XX )
             help_topics[j++] = "xosc";
 #endif
             help_topics[j++] = "start";
@@ -2088,7 +2101,7 @@ char* cli_hints( const char* buf, int* color, int* bold )
         }
         return power_hint;
     }
-#ifndef SX126X
+#if defined( LR20XX )
     if( strcasecmp( buf, "agc " ) == 0 )
         return "<auto|g1-g13>";
     if( strcasecmp( buf, "boost-lf " ) == 0 )
@@ -2127,7 +2140,7 @@ char* cli_hints( const char* buf, int* color, int* bold )
         return "<show|reset|param value>";
     if( strcasecmp( buf, "per " ) == 0 )
         return "<count|interval|payload|stats|reset>";
-#ifndef SX126X
+#if defined( LR20XX )
     if( strcasecmp( buf, "xosc " ) == 0 )
         return "<show|default|xta|xtb|wait>";
     if( strncasecmp( buf, "xosc xta ", 9 ) == 0 && strlen( buf ) == 9 )

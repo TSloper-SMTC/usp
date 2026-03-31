@@ -41,6 +41,19 @@ uint32_t smtc_modem_hal_get_time_in_ms( void )
 }
 
 /*
+ * --- Radio TCXO startup (used by ral_lr11xx_bsp.c) --------------------------
+ */
+
+uint32_t smtc_modem_hal_get_radio_tcxo_startup_delay_ms( void )
+{
+#if defined( LR1110 ) || defined( LR1120 )
+    return 5;
+#else
+    return 0;
+#endif
+}
+
+/*
  * --- Panic -------------------------------------------------------------------
  */
 

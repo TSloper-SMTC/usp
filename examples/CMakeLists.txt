@@ -1077,7 +1077,6 @@ if(("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}"
         ${RADIO_TEST_CLI_DIR}/cli_state.c
         ${RADIO_TEST_CLI_DIR}/region.c
         ${RADIO_TEST_CLI_DIR}/mod_lora.c
-        ${RADIO_TEST_CLI_DIR}/mod_flrc.c
         ${RADIO_TEST_CLI_DIR}/test_modes.c
         ${RADIO_TEST_CLI_DIR}/per_counter.c
         ${RADIO_TEST_CLI_DIR}/linenoise.c
@@ -1103,6 +1102,7 @@ if(("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}"
         endif()
         target_sources(radio_test_cli PRIVATE
             ${RADIO_TEST_CLI_DIR}/chip_lr20xx.c
+            ${RADIO_TEST_CLI_DIR}/mod_flrc.c
             ${LR20XX_HAL_SRC}
             ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/ral_lr20xx_bsp.c
             ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/radio_utilities.c
@@ -1113,7 +1113,20 @@ if(("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}"
             lr20xx_driver_flrc
         )
     elseif(RADIO_FAMILY STREQUAL "lr11xx")
-        message(FATAL_ERROR "radio_test_cli: LR11xx backend not yet implemented")
+        if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
+            set(LR11XX_HAL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/lr11xx_hal_linux.c)
+        else()
+            set(LR11XX_HAL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/lr11xx_hal.c)
+        endif()
+        target_sources(radio_test_cli PRIVATE
+            ${RADIO_TEST_CLI_DIR}/chip_lr11xx.c
+            ${LR11XX_HAL_SRC}
+            ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/ral_lr11xx_bsp.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/radio_utilities.c
+        )
+        target_link_libraries(radio_test_cli PRIVATE
+            lr11xx_driver
+        )
     elseif(RADIO_FAMILY STREQUAL "sx126x")
         if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
             set(SX126X_HAL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/radio_hal/sx126x_hal_linux.c)
@@ -1155,6 +1168,18 @@ if(("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}"
     endif()
     if(${RAC_RADIO} MATCHES "^(sx1261|sx1262|sx1268)$")
         target_compile_definitions(radio_test_cli PRIVATE SX126X)
+    endif()
+    if(${RAC_RADIO} MATCHES "lr1110")
+        target_compile_definitions(radio_test_cli PRIVATE LR1110)
+    endif()
+    if(${RAC_RADIO} MATCHES "lr1120")
+        target_compile_definitions(radio_test_cli PRIVATE LR1120)
+    endif()
+    if(${RAC_RADIO} MATCHES "lr1121")
+        target_compile_definitions(radio_test_cli PRIVATE LR1121)
+    endif()
+    if(${RAC_RADIO} MATCHES "^(lr1110|lr1120|lr1121)$")
+        target_compile_definitions(radio_test_cli PRIVATE LR11XX)
     endif()
 
     # Stack region compile definitions

@@ -101,8 +101,14 @@ void per_counter_print( const per_counter_t* c )
      *
      * Fall back to received + crc + gaps when there are no good packets
      * (i.e. we have no sequence information at all). */
+    /* Use TX count (from packet header) when known; fall back to seq span
+     * for infinite mode or when no valid packets were decoded. */
     uint32_t total_expected;
-    if( c->rx_received > 0 )
+    if( c->tx_count > 0 )
+    {
+        total_expected = c->tx_count;
+    }
+    else if( c->rx_received > 0 )
     {
         uint32_t seq_span = ( uint32_t ) ( ( uint16_t ) ( c->last_seq - c->first_seq + 1 ) );
         total_expected = seq_span;
@@ -147,11 +153,11 @@ void per_counter_print( const per_counter_t* c )
         double snr_min  = ( double ) c->snr_min_raw / 4.0;
         double snr_max  = ( double ) c->snr_max_raw / 4.0;
 
-        printf( "  RSSI avg  : %.1f dBm  (min %+d  max %+d)\n",
+        printf( "  RSSI avg  : %+.1f dBm  (min %+d  max %+d)\n",
                 rssi_avg, ( int ) c->rssi_min, ( int ) c->rssi_max );
         if( c->has_snr )
         {
-            printf( "  SNR  avg  : %+.1f dB   (min %+.1f  max %+.1f)\n",
+            printf( "  SNR avg   : %+.1f dB  (min %+.1f  max %+.1f)\n",
                     snr_avg, snr_min, snr_max );
         }
     }

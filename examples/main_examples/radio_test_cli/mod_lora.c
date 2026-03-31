@@ -90,7 +90,7 @@ static const lora_region_constraints_t lora_constraints[] = {
         .default_preamble   = 8,
         .default_syncword   = SYNC_WORD_PUBLIC_AS_923,
     },
-#ifndef SX126X
+#if !defined( SX126X )
     {
         /* WW-2G4: 800 kHz BW (BW_812 is the chip's closest enum).
          * Full SF5-SF12 supported.  SYNC_WORD_PUBLIC_WW_2G4 = 0x21 (not 0x34). */
@@ -104,7 +104,7 @@ static const lora_region_constraints_t lora_constraints[] = {
         .default_preamble   = 8,
         .default_syncword   = SYNC_WORD_PUBLIC_WW_2G4,
     },
-#endif /* SX126X */
+#endif /* !SX126X */
 };
 
 static const int num_lora_constraints = sizeof( lora_constraints ) / sizeof( lora_constraints[0] );
@@ -314,7 +314,7 @@ static int lora_set_param( radio_config_t* cfg, const region_def_t* region,
         {
             cfg->cr = CODING_RATE_4_8;
         }
-#ifndef SX126X
+#if defined( LR20XX ) || defined( LR11XX )
         else if( strcasecmp( value, "li4/5" ) == 0 )
         {
             cfg->cr = CODING_RATE_LI_4_5;
@@ -327,6 +327,8 @@ static int lora_set_param( radio_config_t* cfg, const region_def_t* region,
         {
             cfg->cr = CODING_RATE_LI_4_8;
         }
+#endif
+#if defined( LR20XX )
         else if( strcasecmp( value, "lic4/6" ) == 0 )
         {
             cfg->cr = CODING_RATE_LI_CONV_4_6;
@@ -338,9 +340,11 @@ static int lora_set_param( radio_config_t* cfg, const region_def_t* region,
 #endif
         else
         {
-#ifdef SX126X
+#if defined( SX126X )
             printf( "ERROR: Invalid coding rate. Valid: 4/5, 4/6, 4/7, 4/8\n" );
-#else
+#elif defined( LR11XX )
+            printf( "ERROR: Invalid coding rate. Valid: 4/5, 4/6, 4/7, 4/8, li4/5, li4/6, li4/8\n" );
+#else /* LR20XX */
             printf( "ERROR: Invalid coding rate. Valid: 4/5, 4/6, 4/7, 4/8, li4/5, li4/6, li4/8, lic4/6, lic4/8\n" );
 #endif
             return -1;
@@ -432,7 +436,7 @@ static int lora_set_param( radio_config_t* cfg, const region_def_t* region,
         return 0;
     }
 
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
     /* --- ldro --- */
     if( strcasecmp( name, "ldro" ) == 0 )
     {
@@ -466,7 +470,7 @@ static bool lora_owns_param( const char* name )
            strcasecmp( name, "header" ) == 0 ||
            strcasecmp( name, "crc" ) == 0 ||
            strcasecmp( name, "iq" ) == 0 ||
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
            strcasecmp( name, "ldro" ) == 0 ||
 #endif
            false;
@@ -482,7 +486,7 @@ static void lora_print_status( const radio_config_t* cfg )
     printf( "  Header:     %s\n", cfg->header_implicit ? "implicit" : "explicit" );
     printf( "  CRC:        %s\n", cfg->crc_on ? "on" : "off" );
     printf( "  IQ:         %s\n", cfg->invert_iq ? "inverted" : "standard" );
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
     printf( "  LDRO:       %s\n", cfg->ldro < 0 ? "auto" : ( cfg->ldro ? "on" : "off" ) );
 #endif
 }
@@ -492,9 +496,11 @@ static void lora_print_help( void )
     printf( "\nLoRa parameters:\n" );
     printf( "  bw <kHz>                   Bandwidth\n" );
     printf( "  sf <N>                     Spreading factor\n" );
-#ifdef SX126X
+#if defined( SX126X )
     printf( "  cr <4/5|4/6|4/7|4/8>       Coding rate\n" );
-#else
+#elif defined( LR11XX )
+    printf( "  cr <4/5|..|4/8|li4/5|..>   Coding rate (incl. LI)\n" );
+#else /* LR20XX */
     printf( "  cr <4/5|..|4/8|li4/5|..>   Coding rate (incl. LI on LR20xx)\n" );
 #endif
     printf( "  preamble <symbols>         Preamble length (4-65535)\n" );
@@ -502,7 +508,7 @@ static void lora_print_help( void )
     printf( "  header <implicit|explicit> Header type\n" );
     printf( "  crc <on|off>               CRC\n" );
     printf( "  iq <standard|inverted>     I/Q polarity\n" );
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
     printf( "  ldro <auto|on|off>         Low data rate optimizer\n" );
 #endif
 }
@@ -519,7 +525,7 @@ static const char* lora_bw_hint( const radio_config_t* cfg )
     if( lc == NULL )
     {
         /* No region set — show all possible BWs for this chip */
-#ifdef SX126X
+#if defined( SX126X )
         return "<125|250|500>";
 #else
         return "<125|250|500|812>";
@@ -686,11 +692,15 @@ static bool lora_print_param_help( const char* param_name, const radio_config_t*
         {
             printf( "  Current: %s\n", cli_state_cr_str( cfg->cr ) );
         }
-#ifdef SX126X
+#if defined( SX126X )
         printf( "  Valid: 4/5, 4/6, 4/7, 4/8\n" );
-#else
+#elif defined( LR11XX )
         printf( "  Valid: 4/5, 4/6, 4/7, 4/8\n" );
-        printf( "  Long interleaver (LR20xx only):\n" );
+        printf( "  Long interleaver:\n" );
+        printf( "    li4/5, li4/6, li4/8\n" );
+#else /* LR20XX */
+        printf( "  Valid: 4/5, 4/6, 4/7, 4/8\n" );
+        printf( "  Long interleaver:\n" );
         printf( "    li4/5, li4/6, li4/8     — LI Hamming/Parity\n" );
         printf( "    lic4/6, lic4/8          — LI Convolutional\n" );
 #endif
@@ -761,10 +771,10 @@ static bool lora_print_param_help( const char* param_name, const radio_config_t*
         return true;
     }
 
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
     if( strcasecmp( param_name, "ldro" ) == 0 )
     {
-        printf( "ldro — Low data rate optimizer (SX126x only)\n" );
+        printf( "ldro — Low data rate optimizer\n" );
         if( cfg != NULL && cfg->modulation == MODULATION_LORA )
         {
             printf( "  Current: %s\n", cfg->ldro < 0 ? "auto" : ( cfg->ldro ? "on" : "off" ) );
@@ -779,7 +789,7 @@ static bool lora_print_param_help( const char* param_name, const radio_config_t*
     return false;
 }
 
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
 static const char* const lora_param_names[] = {
     "bw", "sf", "cr", "preamble", "syncword", "header", "crc", "iq", "ldro", NULL
 };
@@ -789,9 +799,12 @@ static const char* const lora_param_names[] = {
 };
 #endif
 
-#ifdef SX126X
+#if defined( SX126X )
 static const char* const cr_completions[]     = { "4/5", "4/6", "4/7", "4/8", NULL };
-#else
+#elif defined( LR11XX )
+static const char* const cr_completions[]     = { "4/5", "4/6", "4/7", "4/8",
+                                                   "li4/5", "li4/6", "li4/8", NULL };
+#else /* LR20XX */
 static const char* const cr_completions[]     = { "4/5", "4/6", "4/7", "4/8",
                                                    "li4/5", "li4/6", "li4/8",
                                                    "lic4/6", "lic4/8", NULL };
@@ -838,9 +851,11 @@ static const char* lora_get_hint( const char* param_name, const radio_config_t* 
     if( strcasecmp( param_name, "sf" ) == 0 )
         return lora_sf_hint( cfg );
     if( strcasecmp( param_name, "cr" ) == 0 )
-#ifdef SX126X
+#if defined( SX126X )
         return "<4/5|4/6|4/7|4/8>";
-#else
+#elif defined( LR11XX )
+        return "<4/5|4/6|4/7|4/8|li4/5|li4/6|li4/8>";
+#else /* LR20XX */
         return "<4/5|4/6|4/7|4/8|li4/5|li4/6|li4/8|lic4/6|lic4/8>";
 #endif
     if( strcasecmp( param_name, "preamble" ) == 0 )
@@ -853,7 +868,7 @@ static const char* lora_get_hint( const char* param_name, const radio_config_t* 
         return "<on|off>";
     if( strcasecmp( param_name, "iq" ) == 0 )
         return "<standard|inverted>";
-#ifdef SX126X
+#if defined( SX126X ) || defined( LR11XX )
     if( strcasecmp( param_name, "ldro" ) == 0 )
         return "<auto|on|off>";
 #endif
@@ -882,8 +897,8 @@ static const modulation_module_t mod_lora = {
  * --- Registry ---
  */
 
-#ifndef SX126X
-/* Defined in mod_flrc.c */
+#if defined( LR20XX )
+/* Defined in mod_flrc.c — compiled only for LR20xx */
 extern const modulation_module_t mod_flrc;
 static const modulation_module_t* const all_modules[] = { &mod_lora, &mod_flrc, NULL };
 #else

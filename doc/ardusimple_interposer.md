@@ -1,4 +1,4 @@
-# ArduSimple Interposer Board for LR2021 on Raspberry Pi
+# ArduSimple Interposer Board on Raspberry Pi
 
 ## Overview
 
@@ -185,3 +185,81 @@ After applying all changes and rebooting:
 - The `example_options.h` file contains LoRaWAN credentials (DevEUI,
   JoinEUI, AppKey) and region settings that must be configured for your
   network -- these are independent of the interposer hardware.
+
+---
+
+## LR11xx (LR1110/LR1120/LR1121) Shield Configuration
+
+The LR11xx evaluation shields use the same ArduSimple interposer but
+have a different DIO/IRQ pin and three on-board LEDs. This section
+covers the additional boot configuration required for LR11xx shields.
+
+### Signal Routing
+
+| Signal   | BCM GPIO    | Physical Pin | Description                                  |
+|----------|-------------|--------------|----------------------------------------------|
+| SPI MOSI | GPIO 10     | Pin 19       | SPI0 MOSI (default)                          |
+| SPI MISO | GPIO 9      | Pin 21       | SPI0 MISO (default)                          |
+| SPI SCLK | GPIO 11     | Pin 23       | SPI0 SCLK (default)                          |
+| SPI CS   | **GPIO 23** | Pin 16       | Chip select (remapped from default GPIO 8)   |
+| NRST     | **GPIO 4**  | Pin 7        | Radio reset (active-low)                     |
+| BUSY     | **GPIO 18** | Pin 12       | Radio busy status                            |
+| DIO/IRQ  | **GPIO 27** | Pin 13       | Radio interrupt (rising edge)                |
+
+### LED Pin Mapping
+
+The LR11xx shields have three LEDs routed through the interposer:
+
+| LED      | Arduino Pin | BCM GPIO    | Physical Pin |
+|----------|-------------|-------------|--------------|
+| TX       | A4          | **GPIO 2**  | Pin 3        |
+| RX       | A5          | **GPIO 3**  | Pin 5        |
+| Sniffing | D4          | **GPIO 7**  | Pin 26       |
+
+GPIO 2 and GPIO 3 are the Raspberry Pi's I2C1 bus (SDA/SCL) and have
+1.8k hardware pull-ups to 3.3V. GPIO 7 is SPI0 CE1. Both the I2C and
+SPI drivers must be reconfigured to release these pins for LED use.
+
+### Raspberry Pi Boot Configuration
+
+Add the following to `/boot/firmware/config.txt`:
+
+```ini
+# Enable SPI with one chip select only (frees GPIO 7 / SPI0 CE1)
+dtparam=spi=on
+dtoverlay=spi0-1cs,cs0_pin=23
+
+# Disable I2C (frees GPIO 2 and GPIO 3 from hardware pull-ups)
+dtparam=i2c_arm=off
+
+# Drive LED GPIOs low at boot so LEDs are off before the application starts
+gpio=2,3,7=op,dl
+
+# Configure GPIO 18 (BUSY pin) as input with no pull resistor
+gpio=18=ip,pn
+```
+
+`dtoverlay=spi0-1cs,cs0_pin=23` -- Configures SPI0 with only one chip
+select remapped to GPIO 23, releasing GPIO 7 (CE1) for the sniffing LED.
+
+`dtparam=i2c_arm=off` -- Disables the I2C1 peripheral so GPIO 2 and
+GPIO 3 are not claimed by the I2C driver. Without this, the 1.8k
+hardware pull-ups keep the TX and RX LEDs on regardless of software
+control.
+
+`gpio=2,3,7=op,dl` -- Drives the three LED GPIOs as outputs, low, at
+boot time. This ensures LEDs are off immediately, before any application
+starts.
+
+A reboot is required after modifying `config.txt`.
+
+### Verification
+
+After rebooting, confirm the LED GPIOs are free:
+
+```bash
+gpioinfo gpiochip0 | grep -E "line\s+(2|3|7)\b"
+```
+
+All three lines should show as `unused` (or claimed by `gpio_out` from
+the `gpio=` overlay, which does not prevent userspace access).

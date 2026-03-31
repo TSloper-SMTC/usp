@@ -46,6 +46,9 @@
 #define POWER_MIN_SUB_GHZ  -17
 #elif defined( SX1262 ) || defined( SX1268 )
 #define POWER_MIN_SUB_GHZ  -9
+#elif defined( LR11XX )
+#define POWER_MIN_SUB_GHZ  -17  /* LR11XX_LP_MIN_OUTPUT_POWER */
+#define POWER_MIN_HF       -18  /* LR11XX_HF_MIN_OUTPUT_POWER */
 #else /* LR20xx */
 #define POWER_MIN_SUB_GHZ  -10
 #define POWER_MIN_HF       -17

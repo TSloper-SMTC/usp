@@ -18,6 +18,7 @@
 #include "per_counter.h"
 #include "linenoise.h"
 #include "smtc_hal_rtc.h"
+#include "smtc_hal_led.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -188,6 +189,7 @@ static int per_tx_arm( radio_config_t* cfg, const chip_driver_t* chip )
         return -1;
     }
 
+    hal_led_set( HAL_LED_TX, true );
     s->state = PER_TX_PENDING;
     s->seq   = 0;
 
@@ -222,6 +224,7 @@ static int per_tx_tick( radio_config_t* cfg, const chip_driver_t* chip )
         }
         if( irq & CHIP_IRQ_TX_DONE )
         {
+            hal_led_set( HAL_LED_TX, false );
             per_counter_add_tx( &s->counter );
             tick_hide();
             if( s->count != 0 )
@@ -250,6 +253,7 @@ static int per_tx_tick( radio_config_t* cfg, const chip_driver_t* chip )
         }
         else if( irq & CHIP_IRQ_TIMEOUT )
         {
+            hal_led_set( HAL_LED_TX, false );
             tick_hide();
             printf( "WARN: TX timeout at seq=0x%04X\n", (unsigned) s->seq );
             tick_show();
@@ -288,6 +292,7 @@ static int per_tx_tick( radio_config_t* cfg, const chip_driver_t* chip )
             }
             else
             {
+                hal_led_set( HAL_LED_TX, true );
                 s->state = PER_TX_PENDING;
             }
         }
@@ -297,6 +302,7 @@ static int per_tx_tick( radio_config_t* cfg, const chip_driver_t* chip )
     case PER_TX_DONE:
     per_tx_done:
     {
+        hal_led_set( HAL_LED_TX, false );
         chip->stop();
         tick_hide();
         printf( "\nPER TX: complete - %u packets sent.\n", (unsigned) s->counter.tx_sent );
@@ -379,6 +385,7 @@ static int per_rx_arm( radio_config_t* cfg, const chip_driver_t* chip )
         return -1;
     }
 
+    hal_led_set( HAL_LED_RX, true );
     s->state = PER_RX_ACTIVE;
     cfg->active_mode = MODE_PER_RX;
     return 0;
@@ -505,6 +512,7 @@ static int per_rx_tick( radio_config_t* cfg, const chip_driver_t* chip )
                     s->first_packet    = false;
                     s->tx_count    = ( ( uint16_t ) buf[2] << 8 ) | buf[3];
                     s->tx_interval = ( ( uint16_t ) buf[4] << 8 ) | buf[5];
+                    s->counter.tx_count = s->tx_count;
 
                     tick_hide();
                     if( s->tx_count > 0 && s->tx_interval > 0 )
@@ -612,6 +620,7 @@ static int per_rx_tick( radio_config_t* cfg, const chip_driver_t* chip )
     case PER_RX_DONE:
     per_rx_done:
     {
+        hal_led_set( HAL_LED_RX, false );
         chip->stop();
         tick_hide();
         per_counter_print( &s->counter );
@@ -822,6 +831,7 @@ static int mod_tx_arm( radio_config_t* cfg, const chip_driver_t* chip )
         return -1;
     }
 
+    hal_led_set( HAL_LED_TX, true );
     s->state = MOD_TX_PENDING;
 
     cfg->active_mode = MODE_MODULATED;
@@ -873,6 +883,7 @@ static int mod_tx_tick( radio_config_t* cfg, const chip_driver_t* chip )
     case MOD_TX_DONE:
     mod_tx_done:
     {
+        hal_led_set( HAL_LED_TX, false );
         chip->stop();
         tick_hide();
         printf( "%s: stopped.\n", s->label );
@@ -1079,6 +1090,7 @@ static int hop_tick( radio_config_t* cfg, const chip_driver_t* chip )
             goto hop_done;
         }
 
+        hal_led_set( HAL_LED_TX, true );
         h->pkt_num++;
 
         tick_hide();
@@ -1116,6 +1128,7 @@ static int hop_tick( radio_config_t* cfg, const chip_driver_t* chip )
         }
         if( irq & ( CHIP_IRQ_TX_DONE | CHIP_IRQ_TIMEOUT ) )
         {
+            hal_led_set( HAL_LED_TX, false );
             chip->stop();
             if( h->delay_ms > 0 )
             {
@@ -1143,6 +1156,7 @@ static int hop_tick( radio_config_t* cfg, const chip_driver_t* chip )
     case HOP_DONE:
     hop_done:
     {
+        hal_led_set( HAL_LED_TX, false );
         chip->stop();
         tick_hide();
         printf( "%s: stopped after %u packets\n", h->mode_name, (unsigned) h->pkt_num );
@@ -1404,6 +1418,7 @@ static int start_dts( radio_config_t* cfg, const chip_driver_t* chip )
         return -1;
     }
 
+    hal_led_set( HAL_LED_TX, true );
     s->state = MOD_TX_PENDING;
 
     cfg->active_mode = MODE_DTS;
@@ -1681,6 +1696,7 @@ int test_mode_start( radio_config_t* cfg, const chip_driver_t* chip, active_mode
         rc = chip->start_tx_cw();
         if( rc == 0 )
         {
+            hal_led_set( HAL_LED_TX, true );
             printf( "CW transmitting at %.3f MHz, %+d dBm\n", ( double ) cfg->freq_mhz, cfg->power_dbm );
         }
         break;
@@ -1689,6 +1705,7 @@ int test_mode_start( radio_config_t* cfg, const chip_driver_t* chip, active_mode
         rc = chip->start_rx( 0 ); /* continuous */
         if( rc == 0 )
         {
+            hal_led_set( HAL_LED_RX, true );
             printf( "RX mode active at %.3f MHz\n", ( double ) cfg->freq_mhz );
         }
         break;
@@ -1767,6 +1784,8 @@ int test_mode_stop( radio_config_t* cfg, const chip_driver_t* chip )
     }
 
     /* Fire-and-forget modes: stop immediately */
+    hal_led_set( HAL_LED_TX, false );
+    hal_led_set( HAL_LED_RX, false );
     int rc = chip->stop();
     if( rc != 0 )
     {

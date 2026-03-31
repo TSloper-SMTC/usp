@@ -128,13 +128,15 @@ const char* cli_state_cr_str( coding_rate_t cr )
         return "4/7";
     case CODING_RATE_4_8:
         return "4/8";
-#ifndef SX126X
+#if defined( LR20XX ) || defined( LR11XX )
     case CODING_RATE_LI_4_5:
         return "LI 4/5";
     case CODING_RATE_LI_4_6:
         return "LI 4/6";
     case CODING_RATE_LI_4_8:
         return "LI 4/8";
+#endif
+#if defined( LR20XX )
     case CODING_RATE_LI_CONV_4_6:
         return "LI-Conv 4/6";
     case CODING_RATE_LI_CONV_4_8:
@@ -278,7 +280,7 @@ void cli_state_print_status( const radio_config_t* cfg )
     {
         printf( "  Frequency:  %.3f MHz\n", ( double ) cfg->freq_mhz );
         printf( "  Power:      %+d dBm\n", cfg->power_dbm );
-#ifndef SX126X
+#if defined( LR20XX )
         printf( "  AGC gain:   %s\n", cli_state_agc_gain_str( cfg->agc_gain ) );
         /* Mark whichever path the current frequency selects */
         const char* lf_tag = ( cfg->freq_mhz > 0.0f && cfg->freq_mhz < 1500.0f ) ? "  [active]" : "";

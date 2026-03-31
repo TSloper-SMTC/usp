@@ -144,10 +144,12 @@ typedef enum
     CODING_RATE_4_6,
     CODING_RATE_4_7,
     CODING_RATE_4_8,
-#ifndef SX126X
+#if defined( LR20XX ) || defined( LR11XX )
     CODING_RATE_LI_4_5,
     CODING_RATE_LI_4_6,
     CODING_RATE_LI_4_8,
+#endif
+#if defined( LR20XX )
     CODING_RATE_LI_CONV_4_6,
     CODING_RATE_LI_CONV_4_8,
 #endif

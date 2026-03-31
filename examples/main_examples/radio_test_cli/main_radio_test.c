@@ -21,6 +21,7 @@
 
 #include "smtc_hal_mcu.h"
 #include "smtc_hal_gpio.h"
+#include "smtc_hal_led.h"
 #include "modem_pinout.h"
 
 #include <stdio.h>
@@ -343,6 +344,7 @@ int main( int argc, char* argv[] )
 
     /* Initialize HAL (SPI, GPIO, etc.) */
     hal_mcu_init();
+    hal_led_init();
 
     /* Attach radio IRQ callback — the GPIO thread is already running from
      * hal_mcu_init() but consuming and discarding DIO events.  Now it will
