@@ -28,7 +28,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "mcu_compat.h"
+#include <unistd.h>
+#include <signal.h>
+#ifdef __linux__
+#include <fcntl.h>
+#endif
+#include "platform.h"
 
 #ifndef __linux__
 #include "smtc_hal_uart.h"
@@ -124,7 +129,7 @@ static void drain_tick_mode( void )
     while( g_config.active_mode != MODE_IDLE )
     {
         test_mode_tick( &g_config, g_chip );
-        usleep( 500 );
+        platform_sleep_us( 500 );
     }
 }
 
@@ -685,11 +690,11 @@ int main( int argc, char* argv[] )
          * transitions.  When idle or fire-and-forget, sleep longer to save CPU. */
         if( is_tick_mode( g_config.active_mode ) )
         {
-            usleep( 500 );
+            platform_sleep_us( 500 );
         }
         else
         {
-            usleep( 50000 );
+            platform_sleep_us( 50000 );
         }
 
 #ifndef __linux__

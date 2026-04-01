@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
-#include "mcu_compat.h"
+#include "platform.h"
 
 /*
  * --- Private state ---
@@ -46,6 +46,11 @@
  */
 
 static const void* radio_context = NULL;
+
+void chip_set_radio_context( const void* ctx )
+{
+    radio_context = ctx;
+}
 
 /*
  * --- Chip variant detection ---
@@ -777,7 +782,7 @@ static int lr11xx_wait_tx_done( uint32_t timeout_ms )
         {
             return 1;
         }
-        usleep( 1000 ); /* 1 ms */
+        platform_sleep_us( 1000 ); /* 1 ms */
         elapsed++;
     }
     return 1; /* timed out */
@@ -866,7 +871,7 @@ static int lr11xx_receive_packet( uint8_t* buf, uint8_t* buf_len, uint32_t timeo
             return 2;
         }
 
-        usleep( 1000 ); /* 1 ms */
+        platform_sleep_us( 1000 ); /* 1 ms */
         elapsed++;
     }
     return 2; /* timed out (safety net) */

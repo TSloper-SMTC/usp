@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
-#include "mcu_compat.h"
+#include "platform.h"
 
 /*
  * --- Private state ---
@@ -43,6 +43,11 @@
  */
 
 static const void* radio_context = NULL;
+
+void chip_set_radio_context( const void* ctx )
+{
+    radio_context = ctx;
+}
 
 /*
  * --- PA state ---
@@ -722,7 +727,7 @@ static int sx126x_chip_wait_tx_done( uint32_t timeout_ms )
             sx126x_clear_irq_status( radio_context, SX126X_IRQ_TIMEOUT );
             return 1;
         }
-        usleep( 1000 ); /* 1 ms */
+        platform_sleep_us( 1000 ); /* 1 ms */
         elapsed++;
     }
     return 1; /* timed out */
@@ -799,7 +804,7 @@ static int sx126x_chip_receive_packet( uint8_t* buf, uint8_t* buf_len, uint32_t 
             return 2;
         }
 
-        usleep( 1000 ); /* 1 ms */
+        platform_sleep_us( 1000 ); /* 1 ms */
         elapsed++;
     }
     return 2; /* timed out (safety net) */

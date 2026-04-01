@@ -186,6 +186,13 @@ typedef struct
  */
 const chip_driver_t* chip_get_driver( void );
 
+/**
+ * Set the opaque radio context passed to all driver HAL functions.
+ * On baremetal/Linux the context is NULL (global singletons).
+ * On Zephyr the glue layer populates this from device tree before chip_init().
+ */
+void chip_set_radio_context( const void* ctx );
+
 #ifdef __cplusplus
 }
 #endif

@@ -116,7 +116,7 @@ Examples include `periodical_uplink`, `ping_pong`, `ranging_demo`, `packet_error
 
 Standalone interactive RF test CLI. No RAC/RAL/LBM dependencies — talks directly to radio drivers. Build with `--target radio_test_cli` using any standard build command above.
 
-**Supported boards:** LINUX, LINUX_ARM, LINUX_ARM64, NUCLEO_L476, NUCLEO_L073, FPB_RA0E2.
+**Supported boards:** LINUX, LINUX_ARM, LINUX_ARM64, NUCLEO_L476, NUCLEO_L073, FPB_RA0E2. Zephyr: Xiao nRF54L15, nRF54L15 DK (via usp_zephyr module).
 
 **Flash budgets:** ~97 KB on L476 (9%), ~98 KB on L073 (50%), ~99 KB on RA0E2 (76%). Fits on all three.
 
@@ -171,6 +171,10 @@ See `doc/KNOWN_LIMITATIONS.md`. Key issues:
 - LR20xx BW 7/10/15/20 causes division by zero
 - NUCLEO-L073RZ: limited HAL (missing `hal_flash_get_page_size`), LBM examples overflow 192KB flash. radio_test_cli works (50% flash)
 - FPB-RA0E2: limited flash (128 KB), LBM examples won't fit
+
+## Zephyr Workspace
+
+usp_zephyr repo cloned at `~/zephyr-workspaces/usp-zephyr-workspace/usp_zephyr`. Zephyr SDK at `~/zephyr-sdks/zephyr-sdk-0.17.4`. Virtual environment at `~/zephyr-environments/zephyr-v4.2.0-sdk0.17.4`.
 
 ## Sister Repository
 
@@ -235,6 +239,51 @@ git push
 ### When the user says "push" or "let's push":
 
 Do NOT just run `git push`. Instead, review the unpushed commits, apply the criteria above, and either confirm the push makes sense or explain why waiting might be better. Offer to squash if there are fixup commits. The user has explicitly asked for this gatekeeping.
+
+## Zephyr RTOS Support (feature/zephyr-support branch)
+
+radio_test_cli supports Zephyr via the usp_zephyr module import mechanism. Shared CLI code is
+compiled for all three platforms (Linux, baremetal, Zephyr) from the same source files.
+
+**Platform abstraction:** `platform.h` + `platform_linux.c` / `platform_baremetal.c` / `platform_zephyr.c`
+selected by the build system. No `#ifdef` for timing — `platform_sleep_us()` and `platform_time_ms()`.
+The old `mcu_compat.h` is deleted.
+
+**Zephyr files staged in `usp_zephyr/`** at repo root (copy to real usp_zephyr repo for building):
+- `radio_test_cli/CMakeLists.txt` — auto-detects radio from DT (LR20xx/LR11xx/SX126x)
+- `radio_test_cli/src/zephyr_hal_bridge.c` — radio context from DT, DIO IRQ bridge
+- `radio_test_cli/src/smtc_hal_zephyr/` — Zephyr HAL implementations
+
+**Key architectural decisions:**
+- radio_test_cli bypasses RAC — does NOT use `SMTC_SW_PLATFORM_INIT()` or `CONFIG_USP_MAIN_THREAD`
+- Radio context is `const struct device*` from `DT_CHOSEN(zephyr_lorawan_transceiver)` — passed via `chip_set_radio_context()`
+- DIO IRQ bridge: `lora_transceiver_board_attach_interrupt()` → `hal_gpio_fire_irq()` → stored callback in GPIO HAL pin table
+- `modem_pinout_zephyr.h` hardcodes pin values (not enum names) due to include-path conflict with `smtc_hal_linux` headers added globally by usp_zephyr's subsys. `_Static_assert` validates they match.
+- Files NOT compiled on Zephyr (usp_zephyr module provides them): `stack_hal_shim.c`, `smtc_duty_cycle.c`, `ral_lr20xx_bsp.c`, `radio_utilities.c`, `smtc_hal_led.c`
+- `ral_lr20xx_bsp_get_xosc_trim()` stub in bridge (usp_zephyr BSP lacks it — DT binding needs extending)
+
+**Build (Xiao nRF54L15 + LR2021):**
+```bash
+west build --pristine --board xiao_nrf54l15/nrf54l15/cpuapp --shield semtech_wio_lr2021 samples/usp/sdk/radio_test_cli
+```
+
+**Build (nRF54L15 DK + LR2021 via mbed adapter):**
+```bash
+west build --pristine --board nrf54l15dk/nrf54l15/cpuapp --shield semtech_nrf54l15dk_mbed_interface --shield semtech_mbed_wio_interface --shield semtech_wio_lr2021 samples/usp/sdk/radio_test_cli
+```
+
+**Dev workflow:** Symlink this repo as the USP module for instant iteration:
+```bash
+cd ~/zephyr-workspaces/usp-zephyr-workspace
+rm -rf modules/lib/usp
+ln -s ~/semtech/usp/radio_test_cli modules/lib/usp
+```
+
+**Zephyr prj.conf notes:**
+- `CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y` for float printf (not `-u _printf_float`)
+- `CONFIG_LOG_MODE_IMMEDIATE=y` to prevent boot banner appearing after CLI banner
+- `CONFIG_SHELL=n` — we use linenoise, not Zephyr shell
+- `CONFIG_HEAP_MEM_POOL_SIZE=8192` for linenoise history allocation
 
 ## Testing
 

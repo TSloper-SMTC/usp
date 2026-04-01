@@ -41,6 +41,8 @@ extern "C" {
 // For Linux builds, use the Linux-specific pinout
 #if defined( LINUX_PLATFORM )
 #include "modem_pinout_linux.h"
+#elif defined( __ZEPHYR__ )
+#include "modem_pinout_zephyr.h"
 #else
 
 /*
@@ -166,10 +168,10 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
  */
+#endif  // !defined(LINUX_PLATFORM) && !defined(__ZEPHYR__)
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // !defined(LINUX_PLATFORM)
 
 #endif  //__MODEM_PIN_NAMES_H__

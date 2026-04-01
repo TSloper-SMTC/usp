@@ -22,8 +22,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "mcu_compat.h"
+#include <signal.h>
 #include <string.h>
+#include "platform.h"
 
 /*
  * --- Shared tick state -------------------------------------------------------
@@ -820,7 +821,7 @@ static int mod_tx_arm( radio_config_t* cfg, const chip_driver_t* chip )
     printf( "\n" );
 
     /* Seed random (time-based, good enough for test payloads) */
-    srand( ( unsigned ) time( NULL ) );
+    srand( ( unsigned ) platform_time_ms( ) );
 
     /* Send first packet */
     mod_tx_fill_random( s->payload, s->pld_size );
@@ -1268,7 +1269,7 @@ static int start_fhss( radio_config_t* cfg, const chip_driver_t* chip )
     }
 
     s_hop.pld_size = pld_size;
-    srand( ( unsigned ) time( NULL ) );
+    srand( ( unsigned ) platform_time_ms( ) );
 
     if( cfg->modulation == MODULATION_FLRC )
     {
@@ -1408,7 +1409,7 @@ static int start_dts( radio_config_t* cfg, const chip_driver_t* chip )
     }
     printf( "\n" );
 
-    srand( ( unsigned ) time( NULL ) );
+    srand( ( unsigned ) platform_time_ms( ) );
 
     mod_tx_fill_random( s->payload, s->pld_size );
     rc = chip->start_tx( s->payload, s->pld_size, 5000 );
@@ -1541,7 +1542,7 @@ static int start_hybrid( radio_config_t* cfg, const chip_driver_t* chip )
     }
 
     s_hop.pld_size = pld_size;
-    srand( ( unsigned ) time( NULL ) );
+    srand( ( unsigned ) platform_time_ms( ) );
 
     if( cfg->modulation == MODULATION_FLRC )
     {
@@ -1775,7 +1776,7 @@ int test_mode_stop( radio_config_t* cfg, const chip_driver_t* chip )
         while( cfg->active_mode != MODE_IDLE )
         {
             test_mode_tick( cfg, chip );
-            usleep( 500 );
+            platform_sleep_us( 500 );
         }
         return 0;
 

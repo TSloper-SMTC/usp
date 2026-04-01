@@ -1093,6 +1093,13 @@ if(("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}"
         $<TARGET_OBJECTS:smtc_hal>
     )
 
+    # Platform abstraction layer (timing primitives)
+    if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")
+        target_sources(radio_test_cli PRIVATE ${RADIO_TEST_CLI_DIR}/platform_linux.c)
+    else()
+        target_sources(radio_test_cli PRIVATE ${RADIO_TEST_CLI_DIR}/platform_baremetal.c)
+    endif()
+
     # Chip-specific backend + HAL glue
     if(RADIO_FAMILY STREQUAL "lr20xx")
         if("${BOARD}" STREQUAL "LINUX" OR "${BOARD}" STREQUAL "LINUX_ARM" OR "${BOARD}" STREQUAL "LINUX_ARM64")

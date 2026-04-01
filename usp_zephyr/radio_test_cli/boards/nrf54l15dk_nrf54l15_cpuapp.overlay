@@ -1,0 +1,12 @@
+/*
+ * Device tree overlay for radio_test_cli on nRF54L15 DK.
+ *
+ * Radio pin configuration is provided by the
+ * semtech_nrf54l15dk_mbed_interface shield overlay.
+ * This file adds any application-specific settings.
+ *
+ * Copyright (c) 2025 Semtech Corporation
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
+/* Placeholder — shield provides radio pin configuration */

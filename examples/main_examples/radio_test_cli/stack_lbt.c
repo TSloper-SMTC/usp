@@ -8,7 +8,7 @@
  */
 
 #include "stack_lbt.h"
-#include "mcu_compat.h"
+#include "platform.h"
 #include <stdio.h>
 
 /** RSSI stabilisation wait before sampling (ms) */
@@ -31,7 +31,7 @@ stack_lbt_result_t stack_lbt_check( const chip_driver_t* chip, uint32_t freq_hz,
     }
 
     /* Wait for RSSI to stabilise */
-    usleep( LBT_SETTLE_MS * 1000 );
+    platform_sleep_us( LBT_SETTLE_MS * 1000 );
 
     /* Poll instantaneous RSSI for the sniff window */
     uint32_t elapsed_us = 0;
@@ -63,7 +63,7 @@ stack_lbt_result_t stack_lbt_check( const chip_driver_t* chip, uint32_t freq_hz,
             return LBT_CHANNEL_BUSY;
         }
 
-        usleep( LBT_POLL_INTERVAL_US );
+        platform_sleep_us( LBT_POLL_INTERVAL_US );
         elapsed_us += LBT_POLL_INTERVAL_US;
     }
 

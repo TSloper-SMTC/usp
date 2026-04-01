@@ -21,7 +21,10 @@
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
-#include "mcu_compat.h"
+#ifdef __linux__
+#include <time.h>
+#endif
+#include "platform.h"
 
 /*
  * --- Token helpers ---
@@ -877,7 +880,7 @@ static int cmd_delay( const tokenized_t* tokens, radio_config_t* cfg, const chip
         {
             break;
         }
-        usleep( 500 );
+        platform_sleep_us( 500 );
     }
     return 0;
 }
