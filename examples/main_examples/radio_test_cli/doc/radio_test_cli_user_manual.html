@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Radio Test CLI — User Manual</title>
+<style>
+/* Local fonts: Liberation Sans + Liberation Mono */
+
+/* ── Page layout ──────────────────────────────────────────────── */
+@page {
+  size: letter;
+  margin: 1in 1in 0.85in 1in;
+  @top-left {
+    content: string(doc-title);
+    font-family: 'Liberation Sans', Arial, sans-serif;
+    font-size: 7.5pt;
+    color: #555f6d;
+    letter-spacing: 0.05em;
+  }
+  @top-right {
+    content: string(section-title);
+    font-family: 'Liberation Sans', Arial, sans-serif;
+    font-size: 7.5pt;
+    color: #555f6d;
+  }
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font-family: 'Liberation Sans', Arial, sans-serif;
+    font-size: 8pt;
+    color: #555f6d;
+  }
+  border-top: 3pt solid #4EACA8;
+}
+
+@page :first {
+  @top-left   { content: none; }
+  @top-right  { content: none; }
+  @bottom-center { content: none; }
+  border-top: none;
+}
+
+@page toc-page {
+  @top-left   { content: none; }
+  @top-right  { content: none; }
+  @bottom-center {
+    content: counter(page, lower-roman);
+    font-family: 'Liberation Sans', Arial, sans-serif;
+    font-size: 8pt;
+    color: #555f6d;
+  }
+  border-top: none;
+}
+
+/* ── Reset ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Variables ────────────────────────────────────────────────── */
+:root {
+  --teal:        #4EACA8;
+  --teal-dark:   #234D4B;
+  --teal-darker: #173332;
+  --teal-medium: #367875;
+  --teal-light:  #C4E4E3;
+  --teal-pale:   #DEF0EF;
+
+  --text:        #1c2526;
+  --text-muted:  #4a5568;
+  --border:      #c8d8d7;
+  --rule:        #e2eceb;
+  --code-bg:     #f2f8f7;
+  --table-alt:   #f5fbfb;
+
+  --warn-bg:     #fffbeb;
+  --warn-border: #b45309;
+  --warn-text:   #713f12;
+  --danger-bg:   #fff5f5;
+  --danger-border:#c53030;
+  --danger-text: #742a2a;
+  --note-bg:     var(--teal-pale);
+  --note-border: var(--teal-medium);
+  --note-text:   var(--teal-darker);
+  --pass-bg:     #f0fdf8;
+  --pass-border: #16a34a;
+  --pass-text:   #14532d;
+}
+
+body {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.6;
+  color: var(--text);
+  -webkit-print-color-adjust: exact;
+  -weasyprint-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Running header strings */
+h1 { string-set: section-title content(); }
+
+/* ── COVER PAGE ────────────────────────────────────────────────── */
+.cover {
+  page: cover-page;
+  page-break-after: always;
+  position: relative;
+  min-height: 9in;
+}
+
+.cover-top-bar {
+  background: var(--teal-darker);
+  height: 0.4in;
+  margin: -1in -1in 0 -1in;
+  width: calc(100% + 2in);
+}
+
+.cover-teal-accent {
+  background: var(--teal);
+  height: 0.12in;
+  margin: 0 -1in;
+  width: calc(100% + 2in);
+}
+
+.cover-body {
+  padding-top: 1.5in;
+  padding-bottom: 0.8in;  /* clear the absolutely-positioned footer */
+}
+
+.cover-eyebrow {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal-medium);
+  margin-bottom: 0.2in;
+}
+
+.cover-title {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 26pt;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--teal-dark);
+  margin-bottom: 0.14in;
+  border: none !important;
+  padding: 0 !important;
+  page-break-before: auto !important;
+  string-set: none;
+}
+
+.cover-subtitle {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 13pt;
+  font-weight: 400;
+  color: #374151;
+  margin-bottom: 0.06in;
+}
+
+.cover-tag {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 9.5pt;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.cover-rule {
+  border: none;
+  border-top: 1.5pt solid var(--teal-light);
+  margin: 0.35in 0;
+  width: 3in;
+}
+
+.cover-meta-row {
+  display: block;
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 9pt;
+  color: var(--text-muted);
+  margin-bottom: 0.075in;
+}
+
+.cover-meta-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cover-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.cover-footer-bar {
+  background: var(--teal-pale);
+  border-top: 1pt solid var(--teal-light);
+  padding: 0.14in 0;
+  text-align: center;
+}
+
+.cover-footer-text {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 8pt;
+  color: var(--teal-medium);
+  letter-spacing: 0.01em;
+}
+
+/* ── TOC PAGE ──────────────────────────────────────────────────── */
+.toc-section {
+  page: toc-page;
+  page-break-after: always;
+}
+
+.toc {
+  margin-top: 0.2in;
+}
+
+.toc-title {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 17pt;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin-bottom: 0.22in;
+  padding-bottom: 0.1in;
+  border-bottom: 2pt solid var(--teal);
+  letter-spacing: -0.015em;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+}
+
+.toc-h1 {
+  display: block;
+  margin-top: 0.13in;
+  margin-bottom: 0.03in;
+  overflow: hidden;
+}
+
+.toc-h1 > a {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: var(--teal-dark);
+  text-decoration: none;
+}
+
+.toc-h1::after { content: none; }
+
+.toc-sub {
+  list-style: none;
+  padding-left: 0.2in;
+  margin-bottom: 0.05in;
+}
+
+.toc-h2 {
+  display: block;
+  margin-bottom: 0.04in;
+  overflow: hidden;
+}
+
+.toc-h2 > a {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 9.5pt;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-h2::after { content: none; }
+
+.toc-pagenum {
+  float: right;
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  color: #367875;
+}
+.toc-h1 .toc-pagenum { font-size: 10pt; }
+.toc-h2 .toc-pagenum { font-size: 9pt; }
+.toc-h1, .toc-h2 {
+  display: block;
+  overflow: hidden;
+}
+
+/* ── MAIN CONTENT ─────────────────────────────────────────────── */
+.content { }
+
+/* Headings */
+h1 {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 15pt;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin: 0 0 0.14in 0;
+  padding-bottom: 0.07in;
+  border-bottom: 2pt solid var(--teal);
+  page-break-before: always;
+  page-break-after: avoid;
+  letter-spacing: -0.015em;
+}
+
+.content > h1:first-child,
+h1.no-break {
+  page-break-before: auto;
+}
+
+h2 {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 11.5pt;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin: 0.28in 0 0.09in 0;
+  padding-left: 0.1in;
+  border-left: 3pt solid var(--teal);
+  page-break-after: avoid;
+}
+
+h3 {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: 600;
+  color: var(--teal-medium);
+  margin: 0.18in 0 0.07in 0;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0.13in 0 0.05in 0;
+  font-style: italic;
+}
+
+/* Paragraphs */
+p {
+  margin-bottom: 0.11in;
+  orphans: 3;
+  widows: 3;
+}
+
+/* Lists */
+ul, ol {
+  margin: 0.07in 0 0.11in 0.26in;
+}
+
+li { margin-bottom: 0.045in; }
+li > ul, li > ol { margin-top: 0.03in; margin-bottom: 0.03in; }
+
+/* Inline code */
+code {
+  font-family: 'Liberation Mono', 'Courier New', monospace;
+  font-size: 8.5pt;
+  background: var(--code-bg);
+  color: var(--teal-darker);
+  padding: 1pt 3pt;
+  border-radius: 2pt;
+  border: 0.5pt solid var(--teal-light);
+}
+
+pre {
+  background: var(--code-bg);
+  border: 1pt solid var(--border);
+  border-left: 3pt solid var(--teal-light);
+  padding: 0.1in;
+  margin: 0.1in 0;
+  font-size: 8.5pt;
+  line-height: 1.5;
+  page-break-inside: avoid;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+pre code { background: none; padding: 0; border: none; }
+
+strong { font-weight: 700; }
+em     { font-style: italic; }
+
+hr {
+  border: none;
+  border-top: 1pt solid var(--rule);
+  margin: 0.22in 0;
+}
+
+/* ── TABLES ────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  font-size: 8.5pt;
+  margin: 0.1in 0 0.16in 0;
+  page-break-inside: auto;
+  table-layout: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+thead {
+  background: var(--teal-darker);
+  color: #ffffff;
+  display: table-header-group;
+}
+
+thead th {
+  padding: 0.07in 0.09in;
+  text-align: left;
+  font-weight: 600;
+  font-size: 7.8pt;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1pt solid var(--teal-dark);
+}
+
+tbody tr:nth-child(odd)  { background: #ffffff; }
+tbody tr:nth-child(even) { background: var(--table-alt); }
+
+tbody td {
+  padding: 0.06in 0.09in;
+  border: 1pt solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+tbody td strong { color: var(--teal-dark); font-weight: 700; }
+
+/* ── CALLOUT BOXES ─────────────────────────────────────────────── */
+.callout {
+  margin: 0.11in 0;
+  padding: 0.09in 0.13in;
+  border-radius: 2pt;
+  page-break-inside: avoid;
+  font-size: 9.5pt;
+  font-family: 'Liberation Sans', Arial, sans-serif;
+  line-height: 1.55;
+}
+
+.callout-warn {
+  background: var(--warn-bg);
+  border-left: 3.5pt solid var(--warn-border);
+  color: var(--warn-text);
+}
+
+.callout-danger {
+  background: var(--danger-bg);
+  border-left: 3.5pt solid var(--danger-border);
+  color: var(--danger-text);
+}
+
+.callout-note {
+  background: var(--note-bg);
+  border-left: 3.5pt solid var(--note-border);
+  color: var(--note-text);
+}
+
+.callout p  { margin-bottom: 0.05in; }
+.callout p:last-child { margin-bottom: 0; }
+.callout ol, .callout ul { margin-left: 0.2in; }
+.callout li { margin-bottom: 0.03in; }
+
+/* ── DOC TITLE STRING ──────────────────────────────────────────── */
+.doc-title-hidden {
+  position: absolute;
+  overflow: hidden;
+  width: 0; height: 0;
+  string-set: doc-title content();
+}
+
+/* ── PAGE BREAK COHESION ──────────────────────────────────────── */
+h2 + p, h2 + ul, h2 + ol, h2 + table, h2 + .callout, h2 + pre,
+h2 + blockquote, h2 + div { page-break-before: avoid; }
+
+h3 + p, h3 + ul, h3 + ol, h3 + table, h3 + .callout, h3 + pre,
+h3 + blockquote, h3 + div { page-break-before: avoid; }
+
+h4 + p, h4 + ul, h4 + ol, h4 + table { page-break-before: avoid; }
+
+thead  { display: table-header-group; }
+tbody  { page-break-inside: auto; }
+tr     { page-break-inside: avoid; page-break-after: auto; }
+
+.callout { page-break-before: avoid; }
+h1 + p { page-break-before: avoid; }
+li { page-break-inside: avoid; }
+
+/* ── CMD SYNTAX BLOCK ──────────────────────────────────────────── */
+.cmd-syntax {
+  background: var(--teal-darker);
+  color: #e2eeee;
+  font-family: 'Liberation Mono', 'Courier New', monospace;
+  font-size: 8.5pt;
+  padding: 0.08in 0.12in;
+  margin: 0.08in 0 0.12in 0;
+  border-radius: 2pt;
+  page-break-inside: avoid;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* ── PART BANNERS ─────────────────────────────────────────────── */
+.part-banner {
+  background: var(--teal-darker);
+  color: #ffffff;
+  padding: 0.5in 0.4in;
+  margin: 0.5in -0.15in 0;
+  border-radius: 3pt;
+  page-break-before: always;
+  page-break-after: always;
+  page-break-inside: avoid;
+}
+.part-label {
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #88c4c2;
+  margin-bottom: 0.08in;
+}
+.part-title {
+  font-size: 18pt;
+  font-weight: 700;
+  margin-bottom: 0.1in;
+}
+.part-desc {
+  font-size: 10pt;
+  color: #c4e4e3;
+  line-height: 1.5;
+}
+
+/* ── FOOTER ───────────────────────────────────────────────────── */
+.doc-footer {
+  margin-top: 0.3in;
+  padding-top: 0.12in;
+  border-top: 1pt solid var(--rule);
+  text-align: center;
+  font-size: 8.5pt;
+  color: var(--text-muted);
+}
+
+</style>
+</head>
+<body>
+
+<span class="doc-title-hidden">Radio Test CLI — User Manual</span>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-teal-accent"></div>
+  <div class="cover-body">
+    <div class="cover-eyebrow">Semtech Unified Software Platform (USP)</div>
+    <div class="cover-title">Radio Test CLI<br>User Manual</div>
+    <div class="cover-subtitle">Interactive RF Test Interface for Semtech Radio Modules</div>
+    <div class="cover-tag">SX126x &bull; LR11xx &bull; LR20xx</div>
+    <hr class="cover-rule">
+    <div class="cover-meta">
+      <span class="cover-meta-row"><span class="cover-meta-label">Version:</span> v0.5.0</span>
+      <span class="cover-meta-row"><span class="cover-meta-label">Platforms:</span> NUCLEO-L476RG &middot; NUCLEO-L073RZ &middot; FPB-RA0E2 &middot; Linux (Raspberry Pi) &middot; Zephyr (nRF54L15)</span>
+    </div>
+  </div>
+  <div class="cover-footer">
+    <div class="cover-footer-bar">
+      <span class="cover-footer-text">Copyright Semtech Corporation 2026. All rights reserved. &nbsp;|&nbsp; Confidential</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc-section">
+<nav class="toc"><div class="toc-title">Table of Contents</div><ol class="toc-list">
+<li class="toc-h1"><a href="#part1">Part 1 — Quick Start</a><ol class="toc-sub">
+<li class="toc-h2"><a href="#s1-1">1.1 Requirements</a></li>
+<li class="toc-h2"><a href="#s1-2">1.2 First Test: CW in Three Commands</a></li>
+</ol></li>
+<li class="toc-h1"><a href="#part2">Part 2 — Test Procedures</a><ol class="toc-sub">
+<li class="toc-h2"><a href="#s2-1">2.1 CW / Conducted Power Measurement</a></li>
+<li class="toc-h2"><a href="#s2-2">2.2 FCC FHSS Test — 64-Channel Hopping</a></li>
+<li class="toc-h2"><a href="#s2-3">2.3 FCC DTS Test — 500 kHz Digital Modulation</a></li>
+<li class="toc-h2"><a href="#s2-4">2.4 FCC Hybrid Test — 8-Channel Sub-Band</a></li>
+<li class="toc-h2"><a href="#s2-5">2.5 PER Link Test</a></li>
+<li class="toc-h2"><a href="#s2-6">2.6 FLRC Test (LR2021)</a></li>
+</ol></li>
+<li class="toc-h1"><a href="#part3">Part 3 — Command Reference</a><ol class="toc-sub">
+<li class="toc-h2"><a href="#s3-1">3.1 Region and Modulation</a></li>
+<li class="toc-h2"><a href="#s3-2">3.2 LoRa Parameters</a></li>
+<li class="toc-h2"><a href="#s3-3">3.3 FLRC Parameters</a></li>
+<li class="toc-h2"><a href="#s3-4">3.4 PA Configuration</a></li>
+<li class="toc-h2"><a href="#s3-5">3.5 Test Modes and Inline Overrides</a></li>
+<li class="toc-h2"><a href="#s3-6">3.6 PER Configuration</a></li>
+<li class="toc-h2"><a href="#s3-7">3.7 Utility Commands and Scripting</a></li>
+</ol></li>
+<li class="toc-h1"><a href="#part4">Part 4 — Reference Tables</a><ol class="toc-sub">
+<li class="toc-h2"><a href="#s4-1">4.1 Region Reference</a></li>
+<li class="toc-h2"><a href="#s4-2">4.2 Chip Compatibility</a></li>
+<li class="toc-h2"><a href="#s4-3">4.3 Quick-Reference Command Table</a></li>
+</ol></li>
+<li class="toc-h1"><a href="#part5">Part 5 — Troubleshooting</a></li>
+</ol></nav>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 1 — QUICK START                                          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="part-banner" id="part1">
+<div class="part-label">PART 1</div>
+<div class="part-title">Quick Start</div>
+<div class="part-desc">Build the CLI, connect your radio, and run your first test.</div>
+</div>
+
+<h1 id="s1-1">1.1 Requirements</h1>
+
+<p><strong>Semtech radio module:</strong> LR1110, LR1120, LR1121, LR2021, LR2022, SX1261, SX1262, or SX1268 connected via SPI/GPIO.</p>
+
+<h2>Linux (Raspberry Pi)</h2>
+
+<table>
+<thead><tr><th>Item</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Host platform</td><td>Raspberry Pi with SPI enabled</td></tr>
+<tr><td>SPI interface</td><td><code>/dev/spidev0.0</code></td></tr>
+<tr><td>GPIO interface</td><td><code>/dev/gpiochip0</code></td></tr>
+<tr><td>User groups</td><td>User must be in the <code>spi</code> and <code>gpio</code> groups</td></tr>
+<tr><td>Build tools</td><td>GCC 12+, CMake 3.25+, Ninja</td></tr>
+</tbody>
+</table>
+
+<h2>Baremetal (STM32 / RA0E2)</h2>
+
+<table>
+<thead><tr><th>Item</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Evaluation board</td><td>NUCLEO-L476RG, NUCLEO-L073RZ, or FPB-RA0E2</td></tr>
+<tr><td>Build tools</td><td>ARM GCC toolchain (<code>arm-none-eabi-gcc</code> 12+), CMake 3.25+, Ninja</td></tr>
+<tr><td>Serial terminal</td><td>ANSI-capable emulator (e.g. Tera Term, PuTTY, minicom) at 115200 baud</td></tr>
+</tbody>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s1-2">1.2 First Test: CW in Three Commands</h1>
+
+<pre><code>region us
+power 22
+start cw --freq 915.0</code></pre>
+
+<p>The radio is now transmitting an unmodulated carrier at 915 MHz, +22 dBm. Type <code>stop</code> or press <strong>Ctrl+C</strong> to halt.</p>
+
+<p><strong>What just happened:</strong> <code>region us</code> loaded US915 defaults. <code>power 22</code> set the PA. <code>start cw</code> started transmission with a one-shot frequency override. No modulation setup is needed for CW.</p>
+
+<div class="callout callout-note">
+<p>The CLI saves history to <code>.radio_test_history</code>. Use <strong>Up/Down arrows</strong> to recall previous commands. Press <strong>Tab</strong> to complete commands and parameter values.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 2 — TEST PROCEDURES                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="part-banner" id="part2">
+<div class="part-label">PART 2</div>
+<div class="part-title">Test Procedures</div>
+<div class="part-desc">Step-by-step guides for each test scenario — from CW power measurements to FCC pre-compliance and PER link tests. Each section explains purpose, parameter choices, and what to expect. For complete parameter syntax, see Part 3.</div>
+</div>
+
+<h1 id="s2-1">2.1 CW / Conducted Power Measurement</h1>
+
+<p><strong>Purpose:</strong> Measure conducted output power and verify frequency accuracy. Also used to confirm PA configuration before modulated testing.</p>
+
+<h2>Minimum setup</h2>
+
+<pre><code>region us
+power 22
+start cw --freq 915.0</code></pre>
+
+<p>No modulation is required for CW. The radio transmits a pure carrier at the specified frequency and power.</p>
+
+<h2>What to adjust</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>How to Set It</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><code>freq</code></td><td>Band edges and center (e.g. 902.3, 915.0, 927.5 MHz)</td><td>Verify power flatness across the band</td></tr>
+<tr><td><code>power</code></td><td>Step through the power range</td><td>Confirm power accuracy at each level</td></tr>
+<tr><td><code>pa</code> <code>pa_ramp_us</code></td><td><code>pa pa_ramp_us 16</code></td><td>Faster ramp; observe switching transients on the analyzer</td></tr>
+</tbody>
+</table>
+
+<h2>Inline power sweep (scripted)</h2>
+
+<pre><code>region us
+start cw --freq 915.0 --power 22
+delay 10000
+stop
+start cw --freq 915.0 --power 14
+delay 10000
+stop
+start cw --freq 915.0 --power 0
+delay 10000
+stop
+exit</code></pre>
+
+<div class="callout callout-note">
+<p><code>--freq</code> and <code>--power</code> on <code>start</code> are one-shot overrides. They do not change the stored configuration, so you can sweep without reconfiguring between runs.</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s2-2">2.2 FCC FHSS Test — 64-Channel Hopping</h1>
+
+<p><strong>Purpose:</strong> Demonstrate compliance with FCC §15.247(a)(1) — frequency hopping spread spectrum. The radio hops across all 64 US915 uplink channels at the configured data rate, proving the system uses at least 50 hopping frequencies with a channel occupancy time below 400 ms.</p>
+
+<h2>Minimum setup</h2>
+
+<pre><code>region us
+modulation lora
+start fhss --dr 0 --count 0</code></pre>
+
+<p>This is a complete, valid FHSS test. The CLI loads LoRa defaults for DR0 (SF10/125 kHz), computes the maximum compliant payload, and hops indefinitely through all 64 channels.</p>
+
+<h2>Which DR to use</h2>
+
+<table>
+<thead><tr><th>DR</th><th>SF</th><th>BW</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>DR0</td><td>SF10</td><td>125 kHz</td><td>Most commonly requested by test labs; longest airtime per hop</td></tr>
+<tr><td>DR3</td><td>SF7</td><td>125 kHz</td><td>Shortest airtime at 125 kHz; useful for rapid channel cycling</td></tr>
+<tr><td>DR4</td><td>SF8</td><td>500 kHz</td><td>500 kHz bandwidth; different PA path on some chips</td></tr>
+</tbody>
+</table>
+
+<p>For FCC pre-compliance the test lab will specify which DR to use. DR0 is most commonly requested.</p>
+
+<h2>Dwell time</h2>
+
+<p>At DR0 (SF10/125 kHz) with the maximum auto-computed payload, each hop occupies approximately 370 ms — safely under the FCC 400 ms limit. The CLI warns if a manual payload size would exceed this limit.</p>
+
+<h2>Adding inter-hop delay</h2>
+
+<pre><code>start fhss --dr 0 --count 64 --delay 100</code></pre>
+
+<p>The <code>--delay</code> option adds a pause (in milliseconds) between hops. This gives the spectrum analyzer time to settle and capture each channel cleanly. A delay of 50–100 ms is typical for swept-tuned analyzers.</p>
+
+<h2>Verifying the channel plan</h2>
+
+<pre><code>show channels</code></pre>
+
+<p>Lists all 64 US915 uplink channels with their index and frequency. Use this to verify the channel plan matches your test plan before starting.</p>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s2-3">2.3 FCC DTS Test — 500 kHz Digital Modulation</h1>
+
+<p><strong>Purpose:</strong> Demonstrate compliance with FCC §15.247(a)(3) — digital transmission system (DTS). The radio transmits continuously on a single frequency using 500 kHz LoRa bandwidth, proving the modulated signal meets spectral mask and power requirements without frequency hopping.</p>
+
+<h2>Setup</h2>
+
+<pre><code>region us
+modulation lora
+bw 500
+sf 7
+cr 4/5
+pld auto
+start dts --freq 915.0</code></pre>
+
+<p><strong>Why these parameters:</strong></p>
+<ul>
+<li><code>bw 500</code> — 500 kHz is required for DTS qualification under §15.247(a)(3)</li>
+<li><code>sf 7</code> — lowest spreading factor gives the widest occupied bandwidth, stressing the spectral mask</li>
+<li><code>cr 4/5</code> — minimum coding rate (LoRaWAN standard)</li>
+<li><code>pld auto</code> — maximum payload; no dwell-time limit applies at 500 kHz</li>
+</ul>
+
+<div class="callout callout-note">
+<p>No dwell-time limit applies to 500 kHz DTS operation.</p>
+</div>
+
+<h2>Varying the test frequency</h2>
+
+<pre><code>start dts --freq 903.0
+start dts --freq 915.0
+start dts --freq 927.0</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s2-4">2.4 FCC Hybrid Test — 8-Channel Sub-Band</h1>
+
+<p><strong>Purpose:</strong> Demonstrate compliance for systems that hop across fewer than 50 channels within an 8-channel sub-band of the US915 plan. The radio hops through 8 consecutive channels using 500 kHz LoRa bandwidth.</p>
+
+<h2>Setup</h2>
+
+<pre><code>region us
+modulation lora
+bw 500
+sf 7
+start hybrid --mask 0 --dr 4 --count 0</code></pre>
+
+<h2>Sub-band mask reference</h2>
+
+<table>
+<thead><tr><th>Mask</th><th>Channels</th><th>Frequency Range</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>ch 0–7</td><td>902.3–903.7 MHz</td></tr>
+<tr><td>1</td><td>ch 8–15</td><td>903.9–905.3 MHz</td></tr>
+<tr><td>2</td><td>ch 16–23</td><td>905.5–906.9 MHz</td></tr>
+<tr><td>3</td><td>ch 24–31</td><td>907.1–908.5 MHz</td></tr>
+<tr><td>4</td><td>ch 32–39</td><td>908.7–910.1 MHz</td></tr>
+<tr><td>5</td><td>ch 40–47</td><td>910.3–911.7 MHz</td></tr>
+<tr><td>6</td><td>ch 48–55</td><td>911.9–913.3 MHz</td></tr>
+<tr><td>7</td><td>ch 56–63</td><td>913.5–914.9 MHz</td></tr>
+</tbody>
+</table>
+
+<p>DR4 (SF8/500 kHz) is the standard LoRaWAN data rate for 500 kHz channels and is the natural choice for hybrid testing.</p>
+
+<h2>Sweeping all sub-bands (script)</h2>
+
+<pre><code>start hybrid --mask 0 --dr 4 --count 8 --delay 100
+start hybrid --mask 1 --dr 4 --count 8 --delay 100
+start hybrid --mask 2 --dr 4 --count 8 --delay 100
+start hybrid --mask 3 --dr 4 --count 8 --delay 100
+start hybrid --mask 4 --dr 4 --count 8 --delay 100
+start hybrid --mask 5 --dr 4 --count 8 --delay 100
+start hybrid --mask 6 --dr 4 --count 8 --delay 100
+start hybrid --mask 7 --dr 4 --count 8 --delay 100</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s2-5">2.5 PER Link Test</h1>
+
+<p><strong>Purpose:</strong> Measure packet error rate between two radio units to verify link budget, sensitivity, and antenna performance. One unit transmits a known number of packets; the other counts received packets and reports RSSI, SNR, and PER.</p>
+
+<h2>Setup — Unit A (transmitter)</h2>
+
+<pre><code>region us
+modulation lora
+freq 915.0
+power 14
+bw 125
+sf 10
+cr 4/5
+per count 1000
+per interval 200
+per payload 16
+start per-tx</code></pre>
+
+<h2>Setup — Unit B (receiver)</h2>
+
+<p>Configure identically (region, modulation, freq, bw, sf, cr, syncword, header, crc), then:</p>
+
+<pre><code>region us
+modulation lora
+freq 915.0
+bw 125
+sf 10
+cr 4/5
+start per-rx</code></pre>
+
+<div class="callout callout-warn">
+<p>Start the receiver before the transmitter. The receiver must be listening before the first packet is sent, or the initial packets will be lost and inflate the PER result.</p>
+</div>
+
+<h2>Reading results</h2>
+
+<pre><code>per stats</code></pre>
+
+<pre><code>Last PER test result (rx):
+  Received:   997
+  CRC errors:   0
+  PER:        0.30%
+  RSSI avg:  -78 dBm
+  SNR avg:   +9.2 dB</code></pre>
+
+<h2>Sensitivity sweep</h2>
+
+<p>Reduce TX power in steps to find the sensitivity threshold where PER degrades:</p>
+
+<pre><code>start per-tx --power 14
+start per-tx --power 10
+start per-tx --power 5
+start per-tx --power 0
+start per-tx --power -5</code></pre>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s2-6">2.6 FLRC Test (LR2021)</h1>
+
+<p><strong>Purpose:</strong> Test the FLRC (Fast Long Range Communication) modulation mode available on the LR2021 radio. FLRC provides higher data rates (up to 2600 kbps). Available on LR2021 only, in <code>us</code> and <code>2g4</code> regions.</p>
+
+<h2>Conducted power / spectral mask</h2>
+
+<pre><code>region 2g4
+modulation flrc
+br 1300
+cr none
+bt bt0.5
+preamble 32
+sw_len 4
+header variable
+crc 2
+pld 127
+start modulated --freq 2440.0 --power 10</code></pre>
+
+<p><strong>Parameter guidance:</strong></p>
+<ul>
+<li><code>bt bt0.5</code> — Gaussian BT product of 0.5 gives a good balance of spectral efficiency and ISI; tighter spectral mask</li>
+<li><code>bt off</code> — disables Gaussian filtering for maximum data throughput at the cost of wider spectral occupancy</li>
+<li><code>cr none</code> — no coding rate overhead; use <code>1/2</code> or <code>3/4</code> for forward error correction in noisy environments</li>
+</ul>
+
+<h2>FLRC PER link test</h2>
+
+<p><strong>Unit A (TX):</strong></p>
+
+<pre><code>region 2g4
+modulation flrc
+br 1300
+cr none
+bt bt0.5
+preamble 32
+sw_len 4
+syncword ED592398
+header variable
+crc 2
+per count 1000
+per interval 50
+per payload 64
+start per-tx --freq 2440.0 --power 10</code></pre>
+
+<p><strong>Unit B (RX):</strong></p>
+
+<pre><code>region 2g4
+modulation flrc
+br 1300
+cr none
+bt bt0.5
+preamble 32
+sw_len 4
+syncword ED592398
+header variable
+crc 2
+start per-rx --freq 2440.0</code></pre>
+
+<div class="callout callout-note">
+<p>Both units must use identical <code>br</code>, <code>cr</code>, <code>bt</code>, <code>preamble</code>, <code>sw_len</code>, <code>syncword</code>, <code>header</code>, and <code>crc</code> settings. The <code>syncword</code> value must match between transmitter and receiver.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 3 — COMMAND REFERENCE                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="part-banner" id="part3">
+<div class="part-label">PART 3</div>
+<div class="part-title">Command Reference</div>
+<div class="part-desc">Complete syntax and valid values for every command and parameter. Use this when you need exact details — Part 2 covers when and why to use them.</div>
+</div>
+
+<h1 id="s3-1">3.1 Region and Modulation</h1>
+
+<h2><code>region</code> — Set Regulatory Region</h2>
+
+<div class="cmd-syntax">region &lt;us|2g4&gt;</div>
+
+<p>Sets the regulatory region and loads default frequency and power values. Must be the first command issued after startup.</p>
+
+<table>
+<thead><tr><th>Region ID</th><th>Band</th><th>Frequency Range</th><th>Max Power</th><th>Regulatory Modes</th></tr></thead>
+<tbody>
+<tr><td><code>us</code></td><td>US915</td><td>902.0–928.0 MHz</td><td>+22 dBm</td><td>FHSS, DTS, Hybrid</td></tr>
+<tr><td><code>2g4</code></td><td>WW-2G4</td><td>2400.0–2480.0 MHz</td><td>+12 dBm</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h2><code>modulation</code> — Set Modulation Type</h2>
+
+<div class="cmd-syntax">modulation &lt;lora|flrc&gt;<br>
+modulation help</div>
+
+<p>Sets the modulation type and loads region-appropriate parameter defaults. <code>modulation help</code> lists all modulations supported by the connected chip.</p>
+
+<p>LoRa is available on all chips. FLRC is available on LR2021 only, in <code>us</code> and <code>2g4</code> regions.</p>
+
+<h2><code>freq</code> — Set Center Frequency</h2>
+
+<div class="cmd-syntax">freq &lt;MHz&gt;</div>
+
+<p>Sets the transmit/receive center frequency in MHz. The value must be within the current region's allowed range.</p>
+
+<h2><code>power</code> — Set TX Power</h2>
+
+<div class="cmd-syntax">power &lt;dBm&gt;</div>
+
+<p>Sets the transmit output power in dBm. The value is validated against the current region's minimum and maximum limits.</p>
+
+<h2><code>agc</code> — Receiver Gain Control</h2>
+
+<div class="cmd-syntax">agc &lt;auto|g1|g2|...|g13&gt;</div>
+
+<p>Sets the receiver gain mode. <code>auto</code> (default) enables automatic gain control. <code>g1</code> through <code>g13</code> select a fixed gain step (g1 = maximum gain, g13 = minimum gain). Available on LR20xx chips only.</p>
+
+<table>
+<thead><tr><th>Value</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>auto</code></td><td>Automatic gain control (default)</td></tr>
+<tr><td><code>g1</code>–<code>g13</code></td><td>Fixed gain step (g1 = max gain, g13 = min gain)</td></tr>
+</tbody>
+</table>
+
+<h2><code>boost-lf</code> / <code>boost-hf</code> — RX Boost Level</h2>
+
+<div class="cmd-syntax">boost-lf &lt;auto|0-7&gt;<br>
+boost-hf &lt;auto|0-7&gt;</div>
+
+<p>Sets the RX boost level for the low-frequency (<code>boost-lf</code>) or high-frequency (<code>boost-hf</code>) receive path. <code>auto</code> uses the default value (0 for LF, 4 for HF). Available on LR20xx chips only.</p>
+
+<h2><code>xosc</code> — Crystal Oscillator Trimming</h2>
+
+<div class="cmd-syntax">xosc &lt;show|default|xta|xtb|wait&gt; [value]</div>
+
+<p>Manages crystal oscillator trimming capacitor values. Available on LR20xx chips only.</p>
+
+<table>
+<thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>xosc show</code></td><td>Display current XTA, XTB, and wait values (with pF conversion)</td></tr>
+<tr><td><code>xosc default</code></td><td>Restore BSP default trim values</td></tr>
+<tr><td><code>xosc xta &lt;0-47&gt;</code></td><td>Set XTA capacitor trim (11.3 + N * 0.47 pF)</td></tr>
+<tr><td><code>xosc xtb &lt;0-47&gt;</code></td><td>Set XTB capacitor trim (11.1 + N * 0.47 pF)</td></tr>
+<tr><td><code>xosc wait &lt;0-255&gt;</code></td><td>Set stabilization delay in microseconds</td></tr>
+</tbody>
+</table>
+
+<h2><code>status</code> — Show Current Configuration</h2>
+
+<div class="cmd-syntax">status</div>
+
+<p>Displays all current configuration parameters in a single view, including region, modulation, frequency, power, modulation-specific parameters, PA overrides, and test mode state.</p>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-2">3.2 LoRa Parameters</h1>
+
+<p>LoRa parameters are set by typing the parameter name directly at the prompt after <code>modulation lora</code> is active. All parameters are validated against regional constraints before being applied.</p>
+
+<h2><code>bw</code> — Bandwidth</h2>
+
+<div class="cmd-syntax">bw &lt;kHz&gt;</div>
+
+<table>
+<thead><tr><th>Region</th><th>Valid Values (kHz)</th></tr></thead>
+<tbody>
+<tr><td>US915</td><td>125, 250, 500</td></tr>
+<tr><td>WW-2G4</td><td>812</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-warn">
+<p>Changing bandwidth may invalidate the current spreading factor. The CLI warns when this occurs; use <code>sf</code> to adjust before starting a test.</p>
+</div>
+
+<h2><code>sf</code> — Spreading Factor</h2>
+
+<div class="cmd-syntax">sf &lt;5-12&gt;</div>
+
+<table>
+<thead><tr><th>BW (kHz)</th><th>US915 SF Range</th><th>LoRaWAN DR Equivalent</th></tr></thead>
+<tbody>
+<tr><td>125</td><td>SF5–SF10</td><td>DR0 (SF10) – DR3 (SF7)</td></tr>
+<tr><td>250</td><td>SF5–SF12</td><td>—</td></tr>
+<tr><td>500</td><td>SF5–SF12</td><td>DR4 (SF8/500k)</td></tr>
+</tbody>
+</table>
+
+<h2><code>cr</code> — Coding Rate</h2>
+
+<div class="cmd-syntax">cr &lt;4/5|4/6|4/7|4/8&gt;          <em>— all chips</em><br>
+cr &lt;li4/5|li4/6|li4/8&gt;        <em>— LR11xx, LR20xx only</em><br>
+cr &lt;lic4/6|lic4/8&gt;            <em>— LR20xx only</em></div>
+
+<p>Sets the LoRa coding rate. Standard rates <code>4/5</code> through <code>4/8</code> are available on all chips. Long interleaved (LI) rates are available on LR11xx and LR20xx. Long interleaved convolutional (LI-Conv) rates are LR20xx only.</p>
+
+<table>
+<thead><tr><th>Value</th><th>Type</th><th>Chips</th></tr></thead>
+<tbody>
+<tr><td><code>4/5</code>, <code>4/6</code>, <code>4/7</code>, <code>4/8</code></td><td>Standard</td><td>All</td></tr>
+<tr><td><code>li4/5</code>, <code>li4/6</code>, <code>li4/8</code></td><td>Long interleaved</td><td>LR11xx, LR20xx</td></tr>
+<tr><td><code>lic4/6</code>, <code>lic4/8</code></td><td>Long interleaved convolutional</td><td>LR20xx only</td></tr>
+</tbody>
+</table>
+
+<h2><code>preamble</code> — Preamble Length</h2>
+
+<div class="cmd-syntax">preamble &lt;4–65535&gt;</div>
+
+<p>Sets the LoRa preamble length in symbols. Default is 8 symbols (LoRaWAN standard). Longer preambles improve reception reliability at the cost of airtime.</p>
+
+<h2><code>syncword</code> — Sync Word</h2>
+
+<div class="cmd-syntax">syncword &lt;hex&gt;</div>
+
+<p>Sets the LoRa sync word as a one-byte hexadecimal value.</p>
+
+<table>
+<thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>0x34</code></td><td>LoRaWAN public network (default for US)</td></tr>
+<tr><td><code>0x12</code></td><td>Private network</td></tr>
+<tr><td><code>0x21</code></td><td>WW-2G4 public (default for 2g4)</td></tr>
+</tbody>
+</table>
+
+<h2><code>header</code> — Header Mode</h2>
+
+<div class="cmd-syntax">header &lt;explicit|implicit&gt;</div>
+
+<p>In <strong>explicit</strong> mode (default), the packet header carries the payload length, coding rate, and CRC presence flag. In <strong>implicit</strong> mode, no header is transmitted — both TX and RX must agree on the payload length and CRC setting in advance.</p>
+
+<h2><code>crc</code> — CRC Enable</h2>
+
+<div class="cmd-syntax">crc &lt;on|off&gt;</div>
+
+<p>Enables or disables the LoRa payload CRC. Default is <code>on</code>.</p>
+
+<h2><code>iq</code> — I/Q Polarity</h2>
+
+<div class="cmd-syntax">iq &lt;standard|inverted&gt;</div>
+
+<p>Sets the I/Q polarity. <code>standard</code> (default) uses normal I/Q mapping. <code>inverted</code> swaps I and Q, which is used by some LoRaWAN downlink configurations. Available on all chips.</p>
+
+<h2><code>pld</code> — Payload Size</h2>
+
+<div class="cmd-syntax">pld &lt;1–255|auto&gt;</div>
+
+<p>Sets the payload size in bytes for continuous modulated transmission (<code>start modulated</code>). Setting <code>auto</code> computes the maximum payload that fits within the FCC 400 ms dwell-time limit for the current LoRa configuration.</p>
+
+<div class="callout callout-note">
+<p><strong>FCC dwell time:</strong> At 125 kHz and 250 kHz bandwidths, the FCC limits each transmission to 400 ms per channel before hopping is required. The CLI calculates time-on-air and warns if the configured payload exceeds this limit. 500 kHz (DTS) is exempt from the dwell-time rule.</p>
+</div>
+
+<h2><code>ldro</code> — Low Data Rate Optimization</h2>
+
+<div class="cmd-syntax">ldro &lt;on|off|auto&gt;</div>
+
+<p>Controls the low data rate optimization flag. When set to <code>auto</code> (default), the CLI enables LDRO automatically when the symbol duration exceeds 16 ms (SF11/125 kHz and SF12/125 kHz). Force <code>on</code> or <code>off</code> to override. Available on SX126x and LR11xx only (not available on LR20xx).</p>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-3">3.3 FLRC Parameters</h1>
+
+<p>FLRC parameters are available after <code>modulation flrc</code> is active. FLRC is supported on LR2021 only, in <code>us</code> and <code>2g4</code> regions.</p>
+
+<h2><code>br</code> — Bit Rate</h2>
+
+<div class="cmd-syntax">br &lt;260|325|520|650|1040|1300|2080|2600&gt;</div>
+
+<p>Sets the FLRC bit rate in kbps. Higher bit rates reduce airtime but require better link budget.</p>
+
+<table>
+<thead><tr><th>Value (kbps)</th><th>Bandwidth</th></tr></thead>
+<tbody>
+<tr><td>260</td><td>312 kHz</td></tr>
+<tr><td>325</td><td>312 kHz</td></tr>
+<tr><td>520</td><td>624 kHz</td></tr>
+<tr><td>650</td><td>624 kHz</td></tr>
+<tr><td>1040</td><td>1248 kHz</td></tr>
+<tr><td>1300</td><td>1248 kHz</td></tr>
+<tr><td>2080</td><td>2496 kHz</td></tr>
+<tr><td>2600</td><td>2496 kHz</td></tr>
+</tbody>
+</table>
+
+<h2><code>cr</code> — Coding Rate</h2>
+
+<div class="cmd-syntax">cr &lt;1/2|2/3|3/4|none&gt;</div>
+
+<p>Sets the FLRC forward error correction coding rate. <code>none</code> disables FEC for maximum throughput. Default is <code>3/4</code>.</p>
+
+<h2><code>bt</code> — Gaussian BT Filter</h2>
+
+<div class="cmd-syntax">bt &lt;off|bt0.5|bt1&gt;</div>
+
+<p>Controls the Gaussian pulse-shaping filter. <code>bt0.5</code> gives tighter spectral mask (recommended). <code>bt1</code> provides moderate filtering. <code>off</code> disables filtering for maximum throughput. Default is <code>bt0.5</code>.</p>
+
+<h2><code>preamble</code> — Preamble Length</h2>
+
+<div class="cmd-syntax">preamble &lt;4|8|12|16|20|24|28|32&gt;</div>
+
+<p>Sets the FLRC preamble length in bits. Must be a multiple of 4 from 4 to 32.</p>
+
+<h2><code>sw_len</code> — Sync Word Length</h2>
+
+<div class="cmd-syntax">sw_len &lt;off|2|4&gt;</div>
+
+<p>Sets the sync word length in bytes. <code>off</code> disables the sync word. Default is <code>4</code>.</p>
+
+<h2><code>tx_sw</code> — TX Sync Word Index</h2>
+
+<div class="cmd-syntax">tx_sw &lt;off|1|2|3&gt;</div>
+
+<p>Selects which syncword register to transmit with. <code>off</code> disables syncword transmission. Default is <code>1</code>.</p>
+
+<h2><code>rx_sw</code> — RX Sync Word Match</h2>
+
+<div class="cmd-syntax">rx_sw &lt;off|1-7&gt;</div>
+
+<p>Selects which syncword register(s) to match on receive, as a bitmask. Default is <code>1</code> (syncword 1 only).</p>
+
+<table>
+<thead><tr><th>Value</th><th>Matches</th></tr></thead>
+<tbody>
+<tr><td><code>off</code> / <code>0</code></td><td>None (syncword matching disabled)</td></tr>
+<tr><td><code>1</code></td><td>sw1</td></tr>
+<tr><td><code>2</code></td><td>sw2</td></tr>
+<tr><td><code>3</code></td><td>sw1 | sw2</td></tr>
+<tr><td><code>4</code></td><td>sw3</td></tr>
+<tr><td><code>5</code></td><td>sw1 | sw3</td></tr>
+<tr><td><code>6</code></td><td>sw2 | sw3</td></tr>
+<tr><td><code>7</code></td><td>sw1 | sw2 | sw3</td></tr>
+</tbody>
+</table>
+
+<h2><code>header</code> — Header Mode</h2>
+
+<div class="cmd-syntax">header &lt;variable|fixed&gt;</div>
+
+<p><code>variable</code> (default) includes the payload length in the packet header. <code>fixed</code> omits the length header — both TX and RX must agree on the payload length.</p>
+
+<h2><code>crc</code> — CRC Length</h2>
+
+<div class="cmd-syntax">crc &lt;off|2|3|4&gt;</div>
+
+<p>Sets the CRC length in bytes. <code>off</code> disables CRC. Default is <code>2</code>.</p>
+
+<h2><code>syncword</code> — Sync Word Value</h2>
+
+<div class="cmd-syntax">syncword &lt;hex&gt;</div>
+
+<p>Sets the 4-byte syncword value for register 1. Enter 1 to 8 hex digits; values shorter than 8 digits are zero-padded from the left. Default is <code>0xED592398</code>.</p>
+
+<div class="callout callout-note">
+<p><strong>FLRC syncword architecture:</strong> <code>syncword</code> sets the byte values in the syncword register. <code>tx_sw</code> selects which register to transmit with. <code>rx_sw</code> controls which registers are matched on receive. For basic operation, set <code>syncword</code> to the desired value and leave <code>tx_sw</code> and <code>rx_sw</code> at their defaults (both <code>1</code>).</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-4">3.4 PA Configuration</h1>
+
+<p>The power amplifier is automatically configured when the <code>power</code> command is used. For advanced measurements requiring manual PA control, use the <code>pa</code> command.</p>
+
+<div class="cmd-syntax">pa show<br>
+pa reset<br>
+pa &lt;param&gt; &lt;value&gt;</div>
+
+<p><code>pa show</code> displays the current PA register values and valid ranges. <code>pa reset</code> clears all manual overrides and restores the automatic PA configuration for the current power level. <code>pa &lt;param&gt; &lt;value&gt;</code> sets an individual PA register.</p>
+
+<p><strong>Override semantics:</strong></p>
+<ul>
+<li>Manual PA overrides take effect immediately and persist until <code>pa reset</code> is called or the <code>power</code> command is used</li>
+<li>The <code>power</code> command recalculates all PA registers from the target power level, clearing any manual overrides</li>
+<li>Overrides are not saved between sessions</li>
+</ul>
+
+<h2>LR20xx (LR2021, LR2022)</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Range</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>half_power</code></td><td>−39 to 44</td><td>TX power in 0.5 dB steps</td></tr>
+<tr><td><code>pa_sel</code></td><td>0–1 (read-only)</td><td>PA path: 0 = LF, 1 = HF</td></tr>
+<tr><td><code>pa_lf_duty_cycle</code></td><td>0–31</td><td>Low-freq PA duty cycle</td></tr>
+<tr><td><code>pa_lf_slices</code></td><td>0–7</td><td>Low-freq PA number of slices</td></tr>
+<tr><td><code>pa_hf_duty_cycle</code></td><td>16–31</td><td>HF duty cycle (16 = max, 31 = lowest)</td></tr>
+<tr><td><code>pa_ramp_us</code></td><td>2–304</td><td>PA ramp time in microseconds</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-note">
+<p><code>pa_sel</code> is read-only and set automatically based on frequency: LF PA for sub-GHz, HF PA for 2.4 GHz. <code>pa_ramp_us</code> accepts discrete values only: 2, 4, 8, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 240, 272, 304.</p>
+</div>
+
+<h2>SX1262 / SX1268</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Range</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>power</code></td><td>−9 to 22</td><td>TX power register value (dBm)</td></tr>
+<tr><td><code>pa_duty_cycle</code></td><td>0–4</td><td>PA duty cycle (max 0x04, see datasheet)</td></tr>
+<tr><td><code>hp_max</code></td><td>0–7</td><td>HP PA limit (7 = max, enables +22 dBm)</td></tr>
+<tr><td><code>pa_ramp_us</code></td><td>10–3400</td><td>PA ramp time in microseconds</td></tr>
+</tbody>
+</table>
+
+<h2>SX1261</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Range</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>power</code></td><td>−17 to 14</td><td>TX power register value (dBm)</td></tr>
+<tr><td><code>pa_duty_cycle</code></td><td>0–7</td><td>PA duty cycle (see datasheet for max)</td></tr>
+<tr><td><code>pa_ramp_us</code></td><td>10–3400</td><td>PA ramp time in microseconds</td></tr>
+</tbody>
+</table>
+
+<h2>LR11xx (LR1110, LR1120, LR1121)</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Range</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>power</code></td><td>−17 to 22</td><td>TX power in dBm</td></tr>
+<tr><td><code>pa_sel</code></td><td>0–2 (read-only)</td><td>PA path: 0 = LP, 1 = HP, 2 = HF</td></tr>
+<tr><td><code>pa_reg_supply</code></td><td>0–1 (read-only)</td><td>PA supply: 0 = VREG, 1 = VBAT</td></tr>
+<tr><td><code>pa_duty_cycle</code></td><td>0–7</td><td>PA duty cycle</td></tr>
+<tr><td><code>pa_hp_sel</code></td><td>0–7</td><td>HP PA slices</td></tr>
+<tr><td><code>pa_ramp_us</code></td><td>16–304</td><td>PA ramp time in microseconds</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-note">
+<p><code>pa_sel</code> and <code>pa_reg_supply</code> are read-only — the BSP selects LP/HP/HF based on frequency and power level. <code>pa_ramp_us</code> accepts discrete values only: 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 240, 272, 304.</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-5">3.5 Test Modes and Inline Overrides</h1>
+
+<p>Test modes are started with <code>start &lt;mode&gt;</code> and stopped with <code>stop</code> or <strong>Ctrl+C</strong>. Only one mode may be active at a time. Configuration commands are blocked while any mode is running.</p>
+
+<div class="callout callout-note">
+<p>On baremetal MCU targets, the CLI runs in a polled main loop. <code>stop</code> is the primary way to halt a test. <strong>Ctrl+C</strong> is handled on Linux only.</p>
+</div>
+
+<h2><code>start cw</code> — Unmodulated Carrier</h2>
+
+<p>Transmits a continuous single-frequency unmodulated carrier. No modulation needs to be configured — only frequency and power are required.</p>
+
+<div class="cmd-syntax">start cw [--freq &lt;MHz&gt;] [--power &lt;dBm&gt;]</div>
+
+<h2><code>start modulated</code> — Continuous Modulated Burst</h2>
+
+<p>Transmits packets back-to-back using the current modulation configuration. Used for occupied bandwidth measurements and spectral mask tests. Payload size is set with the <code>pld</code> command.</p>
+
+<div class="cmd-syntax">start modulated [--freq &lt;MHz&gt;] [--power &lt;dBm&gt;]</div>
+
+<h2><code>start rx</code> — Continuous Receive</h2>
+
+<p>Places the radio in continuous receive mode. Each received packet is printed with RSSI and SNR. CRC errors are reported separately.</p>
+
+<div class="cmd-syntax">start rx [--freq &lt;MHz&gt;]</div>
+
+<h2><code>start fhss</code> — Frequency Hopping (US only)</h2>
+
+<p>Transmits using the US915 64-channel FHSS plan. FCC §15.247(a)(1) pre-compliance.</p>
+
+<div class="cmd-syntax">start fhss [--dr &lt;0-6&gt;] [--count &lt;N&gt;] [--delay &lt;ms&gt;] [--power &lt;dBm&gt;]</div>
+
+<h2><code>start dts</code> — Digital Transmission System (US only)</h2>
+
+<p>Transmits continuously on a fixed frequency at 500 kHz bandwidth. FCC §15.247(a)(3) pre-compliance.</p>
+
+<div class="cmd-syntax">start dts [--freq &lt;MHz&gt;] [--power &lt;dBm&gt;] [--count &lt;N&gt;] [--delay &lt;ms&gt;]</div>
+
+<h2><code>start hybrid</code> — 8-Channel Sub-Band (US only)</h2>
+
+<p>Hops through 8 consecutive channels within a selectable sub-band. The <code>--mask</code> argument is required.</p>
+
+<div class="cmd-syntax">start hybrid --mask &lt;0-7&gt; [--dr &lt;0-6&gt;] [--count &lt;N&gt;] [--delay &lt;ms&gt;] [--power &lt;dBm&gt;]</div>
+
+<h2><code>start per-tx</code> / <code>start per-rx</code> — Packet Error Rate</h2>
+
+<p>Runs a PER test between two radio units. Configure PER parameters with the <code>per</code> command before starting.</p>
+
+<div class="cmd-syntax">start per-tx [--freq &lt;MHz&gt;] [--power &lt;dBm&gt;]<br>
+start per-rx [--freq &lt;MHz&gt;]</div>
+
+<h2><code>stop</code> — Stop Active Test</h2>
+
+<p>Stops the currently running test mode and returns to idle.</p>
+
+<div class="cmd-syntax">stop</div>
+
+<h2>Inline overrides</h2>
+
+<p>The <code>start</code> command accepts inline overrides that modify parameters for a single test run without changing the stored configuration.</p>
+
+<table>
+<thead><tr><th>Override</th><th>Applicable Modes</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--freq &lt;MHz&gt;</code></td><td>All</td><td>One-shot frequency override</td></tr>
+<tr><td><code>--power &lt;dBm&gt;</code></td><td>All TX modes</td><td>One-shot power override</td></tr>
+<tr><td><code>--dr &lt;0-6&gt;</code></td><td>fhss, hybrid</td><td>LoRaWAN data rate for this run</td></tr>
+<tr><td><code>--count &lt;N&gt;</code></td><td>fhss, dts, hybrid</td><td>Packet/hop count (0 = infinite)</td></tr>
+<tr><td><code>--delay &lt;ms&gt;</code></td><td>fhss, dts, hybrid</td><td>Inter-packet/hop delay</td></tr>
+<tr><td><code>--mask &lt;0-7&gt;</code></td><td>hybrid (required)</td><td>8-channel sub-band selection</td></tr>
+</tbody>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-6">3.6 PER Configuration</h1>
+
+<table>
+<thead><tr><th>Command</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>per count &lt;N&gt;</code></td><td>Packets TX will send; 0 = run indefinitely (default: 100)</td></tr>
+<tr><td><code>per interval &lt;ms&gt;</code></td><td>Inter-packet gap on TX side; must be &gt; 0 (default: 500 ms)</td></tr>
+<tr><td><code>per payload &lt;6-255|auto&gt;</code></td><td>Payload size per packet; <code>auto</code> = max for FCC dwell time (default: auto)</td></tr>
+<tr><td><code>per stats</code></td><td>Display last test result (available any time, even during a test)</td></tr>
+<tr><td><code>per reset</code></td><td>Clear last saved result</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-note">
+<p><code>per stats</code> and <code>per reset</code> are always available. All other <code>per</code> subcommands require the radio to be idle — use <code>stop</code> first.</p>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s3-7">3.7 Utility Commands and Scripting</h1>
+
+<h2><code>show channels</code></h2>
+
+<p>Displays the complete LoRaWAN channel plan for the current region, listing each channel index and its center frequency.</p>
+
+<div class="cmd-syntax">show channels</div>
+
+<h2><code>delay</code></h2>
+
+<p>Pauses execution for the specified duration in milliseconds. If a test mode is active, it continues to run during the delay — this is intended for use in scripts to set observation windows.</p>
+
+<div class="cmd-syntax">delay &lt;ms&gt;</div>
+
+<h2><code>term</code> — Terminal Input Mode</h2>
+
+<div class="cmd-syntax">term &lt;ansi|plain&gt;</div>
+
+<p>Switches the terminal input mode between <code>ansi</code> (arrow keys, history, tab completion) and <code>plain</code> (basic line input). MCU only — not available on Linux. With no arguments, shows the current mode.</p>
+
+<h2><code>version</code></h2>
+
+<p>Displays the CLI version string and build information.</p>
+
+<div class="cmd-syntax">version</div>
+
+<h2><code>help</code></h2>
+
+<p>Shows the command reference. Provide a command name for context-sensitive detail.</p>
+
+<div class="cmd-syntax">help [command]</div>
+
+<h2><code>exit</code> / <code>quit</code></h2>
+
+<p>Stops any active test, closes the radio, and exits the CLI.</p>
+
+<div class="cmd-syntax">exit</div>
+
+<h2>Scripting / Pipe Mode</h2>
+
+<p>When stdin is not a terminal (i.e. piped or redirected input), the CLI runs in non-interactive script mode: commands are read sequentially from stdin and the CLI exits when EOF is reached.</p>
+
+<pre><code>./build/radio_test_cli &lt;&lt;'EOF'
+region us
+modulation lora
+freq 915.0
+power 22
+start cw
+delay 30000
+stop
+exit
+EOF</code></pre>
+
+<div class="callout callout-note">
+<p>Commands that return an error do not stop script execution. Output is written to stdout in the same format as interactive mode, making it suitable for capture with <code>tee</code> or redirection.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 4 — REFERENCE TABLES                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="part-banner" id="part4">
+<div class="part-label">PART 4</div>
+<div class="part-title">Reference Tables</div>
+<div class="part-desc">Region parameters, chip feature matrix, and the complete command quick-reference.</div>
+</div>
+
+<h1 id="s4-1">4.1 Region Reference</h1>
+
+<h2>US915</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Frequency range</td><td>902.0–928.0 MHz</td></tr>
+<tr><td>Default frequency</td><td>902.3 MHz (LoRaWAN ch0)</td></tr>
+<tr><td>TX power range</td><td>−10 to +22 dBm (LR20xx); −9 to +22 dBm (SX1262/SX1268); −17 to +22 dBm (SX1261, LR11xx)</td></tr>
+<tr><td>Default TX power</td><td>+22 dBm</td></tr>
+<tr><td>LoRa BW options</td><td>125, 250, 500 kHz</td></tr>
+<tr><td>LoRa SF (125 kHz)</td><td>SF5–SF10</td></tr>
+<tr><td>LoRa SF (250/500 kHz)</td><td>SF5–SF12</td></tr>
+<tr><td>Default SF/BW</td><td>SF10 / 125 kHz (DR0)</td></tr>
+<tr><td>Default sync word</td><td>0x34 (LoRaWAN public)</td></tr>
+<tr><td>Regulatory modes</td><td>FHSS (64-ch), DTS (500 kHz), Hybrid (8-ch sub-band)</td></tr>
+</tbody>
+</table>
+
+<h2>US915 Data Rates</h2>
+
+<table>
+<thead><tr><th>DR</th><th>Modulation</th><th>SF</th><th>BW</th><th>Bit Rate (approx)</th></tr></thead>
+<tbody>
+<tr><td>DR0</td><td>LoRa</td><td>SF10</td><td>125 kHz</td><td>980 bps</td></tr>
+<tr><td>DR1</td><td>LoRa</td><td>SF9</td><td>125 kHz</td><td>1760 bps</td></tr>
+<tr><td>DR2</td><td>LoRa</td><td>SF8</td><td>125 kHz</td><td>3125 bps</td></tr>
+<tr><td>DR3</td><td>LoRa</td><td>SF7</td><td>125 kHz</td><td>5470 bps</td></tr>
+<tr><td>DR4</td><td>LoRa</td><td>SF8</td><td>500 kHz</td><td>12500 bps</td></tr>
+</tbody>
+</table>
+
+<h2>WW-2G4 (LR2021, LR2022, LR1120, LR1121)</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Frequency range</td><td>2400.0–2480.0 MHz</td></tr>
+<tr><td>Default frequency</td><td>2423.0 MHz</td></tr>
+<tr><td>TX power range</td><td>−17 to +12 dBm (LR20xx); −18 to +12 dBm (LR11xx)</td></tr>
+<tr><td>Default TX power</td><td>+10 dBm</td></tr>
+<tr><td>LoRa BW</td><td>812 kHz</td></tr>
+<tr><td>LoRa SF range</td><td>SF5–SF12</td></tr>
+<tr><td>Default sync word</td><td>0x21 (WW-2G4 public)</td></tr>
+<tr><td>FLRC</td><td>Available (LR2021 only)</td></tr>
+<tr><td>Regulatory modes</td><td>None (handled by host protocol stack)</td></tr>
+</tbody>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s4-2">4.2 Chip Compatibility</h1>
+
+<table>
+<thead><tr><th>Feature</th><th>LR2021</th><th>LR2022</th><th>LR1110</th><th>LR1120</th><th>LR1121</th><th>SX1261</th><th>SX1262</th><th>SX1268</th></tr></thead>
+<tbody>
+<tr><td>LoRa (Sub-GHz)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>LoRa (2.4 GHz)</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>FLRC</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>Region: us</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>Region: 2g4</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>FHSS / DTS / Hybrid</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>PER TX/RX</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>AGC control</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>RX boost (LF/HF)</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>XOSC trimming</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>LED indicators</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>I/Q polarity</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>LDRO control</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+<tr><td>CR LI/LI-Conv</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+</tbody>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+
+<h1 id="s4-3">4.3 Quick-Reference Command Table</h1>
+
+<table>
+<thead><tr><th>Command</th><th>Syntax</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>region</code></td><td><code>region &lt;us|2g4&gt;</code></td><td>Set region; load defaults</td></tr>
+<tr><td><code>modulation</code></td><td><code>modulation &lt;lora|flrc&gt;</code></td><td>Set modulation; load defaults</td></tr>
+<tr><td><code>freq</code></td><td><code>freq &lt;MHz&gt;</code></td><td>Set center frequency</td></tr>
+<tr><td><code>power</code></td><td><code>power &lt;dBm&gt;</code></td><td>Set TX power</td></tr>
+<tr><td><code>agc</code></td><td><code>agc &lt;auto|g1-g13&gt;</code></td><td>Receiver gain control (LR20xx only)</td></tr>
+<tr><td><code>boost-lf</code></td><td><code>boost-lf &lt;auto|0-7&gt;</code></td><td>RX boost level, LF path (LR20xx only)</td></tr>
+<tr><td><code>boost-hf</code></td><td><code>boost-hf &lt;auto|0-7&gt;</code></td><td>RX boost level, HF path (LR20xx only)</td></tr>
+<tr><td><code>xosc</code></td><td><code>xosc &lt;show|default|xta|xtb|wait&gt;</code></td><td>Crystal oscillator trimming (LR20xx only)</td></tr>
+<tr><td><code>status</code></td><td><code>status</code></td><td>Show complete current configuration</td></tr>
+<tr><td><code>bw</code></td><td><code>bw &lt;kHz&gt;</code></td><td>LoRa bandwidth (125/250/500/812)</td></tr>
+<tr><td><code>sf</code></td><td><code>sf &lt;5-12&gt;</code></td><td>LoRa spreading factor</td></tr>
+<tr><td><code>cr</code></td><td><code>cr &lt;4/5|4/6|4/7|4/8|li4/5|li4/6|li4/8|lic4/6|lic4/8&gt;</code></td><td>LoRa coding rate</td></tr>
+<tr><td><code>preamble</code></td><td><code>preamble &lt;symbols&gt;</code></td><td>Preamble length</td></tr>
+<tr><td><code>syncword</code></td><td><code>syncword &lt;hex&gt;</code></td><td>LoRa sync word (e.g. 0x34)</td></tr>
+<tr><td><code>header</code></td><td><code>header &lt;explicit|implicit&gt;</code></td><td>LoRa header mode</td></tr>
+<tr><td><code>crc</code></td><td><code>crc &lt;on|off&gt;</code></td><td>LoRa CRC enable</td></tr>
+<tr><td><code>iq</code></td><td><code>iq &lt;standard|inverted&gt;</code></td><td>LoRa I/Q polarity</td></tr>
+<tr><td><code>pld</code></td><td><code>pld &lt;1-255|auto&gt;</code></td><td>Modulated TX payload size</td></tr>
+<tr><td><code>ldro</code></td><td><code>ldro &lt;on|off|auto&gt;</code></td><td>Low data rate optimization (SX126x, LR11xx only)</td></tr>
+<tr><td><code>br</code></td><td><code>br &lt;260|325|520|650|1040|1300|2080|2600&gt;</code></td><td>FLRC bit rate (kbps)</td></tr>
+<tr><td><code>cr</code> (FLRC)</td><td><code>cr &lt;1/2|2/3|3/4|none&gt;</code></td><td>FLRC coding rate</td></tr>
+<tr><td><code>bt</code></td><td><code>bt &lt;off|bt0.5|bt1&gt;</code></td><td>FLRC Gaussian BT filter</td></tr>
+<tr><td><code>preamble</code> (FLRC)</td><td><code>preamble &lt;4|8|12|16|20|24|28|32&gt;</code></td><td>FLRC preamble length (bits)</td></tr>
+<tr><td><code>sw_len</code></td><td><code>sw_len &lt;off|2|4&gt;</code></td><td>FLRC sync word length (bytes)</td></tr>
+<tr><td><code>tx_sw</code></td><td><code>tx_sw &lt;off|1|2|3&gt;</code></td><td>FLRC TX sync word index</td></tr>
+<tr><td><code>rx_sw</code></td><td><code>rx_sw &lt;off|1-7&gt;</code></td><td>FLRC RX sync word match (bitmask)</td></tr>
+<tr><td><code>header</code> (FLRC)</td><td><code>header &lt;variable|fixed&gt;</code></td><td>FLRC header type</td></tr>
+<tr><td><code>crc</code> (FLRC)</td><td><code>crc &lt;off|2|3|4&gt;</code></td><td>FLRC CRC length (bytes)</td></tr>
+<tr><td><code>syncword</code> (FLRC)</td><td><code>syncword &lt;hex&gt;</code></td><td>FLRC sync word value (e.g. ED592398)</td></tr>
+<tr><td><code>pa show</code></td><td><code>pa show</code></td><td>Display PA parameters and ranges</td></tr>
+<tr><td><code>pa reset</code></td><td><code>pa reset</code></td><td>Clear PA overrides</td></tr>
+<tr><td><code>pa &lt;p&gt; &lt;v&gt;</code></td><td><code>pa &lt;param&gt; &lt;value&gt;</code></td><td>Set PA parameter manually</td></tr>
+<tr><td><code>start cw</code></td><td><code>start cw [overrides]</code></td><td>Unmodulated carrier TX</td></tr>
+<tr><td><code>start modulated</code></td><td><code>start modulated [overrides]</code></td><td>Continuous modulated TX</td></tr>
+<tr><td><code>start rx</code></td><td><code>start rx [overrides]</code></td><td>Continuous receive mode</td></tr>
+<tr><td><code>start fhss</code></td><td><code>start fhss [overrides]</code></td><td>64-channel FHSS TX (US only)</td></tr>
+<tr><td><code>start dts</code></td><td><code>start dts [overrides]</code></td><td>DTS 500 kHz TX (US only)</td></tr>
+<tr><td><code>start hybrid</code></td><td><code>start hybrid --mask N [overrides]</code></td><td>Hybrid 8-ch TX (US only)</td></tr>
+<tr><td><code>start per-tx</code></td><td><code>start per-tx [overrides]</code></td><td>PER test transmitter</td></tr>
+<tr><td><code>start per-rx</code></td><td><code>start per-rx [overrides]</code></td><td>PER test receiver</td></tr>
+<tr><td><code>stop</code></td><td><code>stop</code></td><td>Stop active test mode</td></tr>
+<tr><td><code>per count</code></td><td><code>per count &lt;N&gt;</code></td><td>PER packet count (0 = infinite)</td></tr>
+<tr><td><code>per interval</code></td><td><code>per interval &lt;ms&gt;</code></td><td>PER inter-packet gap</td></tr>
+<tr><td><code>per payload</code></td><td><code>per payload &lt;6-255|auto&gt;</code></td><td>PER payload size</td></tr>
+<tr><td><code>per stats</code></td><td><code>per stats</code></td><td>Show last PER test result</td></tr>
+<tr><td><code>per reset</code></td><td><code>per reset</code></td><td>Clear last PER result</td></tr>
+<tr><td><code>show channels</code></td><td><code>show channels</code></td><td>Display region channel plan</td></tr>
+<tr><td><code>delay</code></td><td><code>delay &lt;ms&gt;</code></td><td>Pause execution (scripting)</td></tr>
+<tr><td><code>term</code></td><td><code>term &lt;ansi|plain&gt;</code></td><td>Terminal input mode (MCU only)</td></tr>
+<tr><td><code>version</code></td><td><code>version</code></td><td>Show CLI version</td></tr>
+<tr><td><code>help</code></td><td><code>help [command]</code></td><td>Show help</td></tr>
+<tr><td><code>exit</code> / <code>quit</code></td><td><code>exit</code></td><td>Exit CLI</td></tr>
+</tbody>
+</table>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 5 — TROUBLESHOOTING                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="part-banner" id="part5">
+<div class="part-label">PART 5</div>
+<div class="part-title">Troubleshooting</div>
+<div class="part-desc">Common errors and how to resolve them.</div>
+</div>
+
+<h1 id="s5" class="no-break">Troubleshooting</h1>
+
+<h2>SPI device not found</h2>
+
+<p><strong>Symptom:</strong> <code>Failed to open /dev/spidev0.0</code> on startup.</p>
+
+<p><strong>Fix:</strong> Enable SPI on the Raspberry Pi. Run <code>sudo raspi-config</code>, navigate to Interface Options > SPI, and enable it. Reboot. Verify with <code>ls /dev/spidev*</code>.</p>
+
+<h2>Permission denied on SPI or GPIO</h2>
+
+<p><strong>Symptom:</strong> <code>Permission denied</code> when accessing <code>/dev/spidev0.0</code> or <code>/dev/gpiochip0</code>.</p>
+
+<p><strong>Fix:</strong> Add your user to the required groups:</p>
+
+<pre><code>sudo usermod -aG spi,gpio $USER</code></pre>
+
+<p>Log out and back in for the group changes to take effect.</p>
+
+<h2>Build fails on GCC 14</h2>
+
+<p><strong>Symptom:</strong> Compilation error about incompatible pointer types in vendor code.</p>
+
+<p><strong>Fix:</strong> Add the warning suppression flag:</p>
+
+<pre><code>env CFLAGS="-Wno-incompatible-pointer-types" \
+  cmake -UCMAKE_C_FLAGS -S examples -B build -DBOARD=LINUX -DRAC_RADIO=lr2021 -G Ninja</code></pre>
+
+<h2>Radio not responding / no RX packets</h2>
+
+<p><strong>Symptom:</strong> Commands succeed but no signal is observed on the spectrum analyzer, or the receiver sees no packets.</p>
+
+<p><strong>Fix:</strong> Check the following:</p>
+<ul>
+<li>Verify the SPI connection and that the correct radio shield is seated properly</li>
+<li>Confirm the <code>-DRAC_RADIO=</code> build flag matches the actual radio chip connected</li>
+<li>For PER tests, ensure both units have identical modulation parameters (bw, sf, cr, syncword, header, crc)</li>
+<li>Check that the frequency is within the selected region's valid range</li>
+</ul>
+
+<h2>FLRC: "not supported by this chip"</h2>
+
+<p><strong>Symptom:</strong> <code>modulation flrc</code> returns an error.</p>
+
+<p><strong>Fix:</strong> FLRC is available on LR2021 only. Verify the build was compiled with <code>-DRAC_RADIO=lr2021</code>. FLRC is available in both <code>us</code> and <code>2g4</code> regions.</p>
+
+<h2>Region 2g4: "not supported by this chip"</h2>
+
+<p><strong>Symptom:</strong> <code>region 2g4</code> returns an error on SX126x or LR11xx.</p>
+
+<p><strong>Fix:</strong> The 2.4 GHz region is only available on chips with a 2.4 GHz radio path: LR2021, LR2022, LR1120, and LR1121. SX1261, SX1262, SX1268, and LR1110 are sub-GHz only.</p>
+
+<h2>AGC command not recognized</h2>
+
+<p><strong>Symptom:</strong> <code>agc auto</code> returns an error.</p>
+
+<p><strong>Fix:</strong> The <code>agc</code> command is available on LR20xx chips only (LR2021, LR2022). It is not supported on SX126x or LR11xx hardware.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="doc-footer">
+Radio Test CLI v0.5.0 &nbsp;|&nbsp; Copyright Semtech Corporation 2026. All rights reserved. &nbsp;|&nbsp; Confidential
+</div>
+
+</div><!-- /content -->
+</body>
+</html>
