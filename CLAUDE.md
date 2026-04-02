@@ -122,6 +122,13 @@ Standalone interactive RF test CLI. No RAC/RAL/LBM dependencies — talks direct
 
 Version is tracked in `examples/main_examples/radio_test_cli/version.h` — update all four defines there when bumping. The user manual (md/html/pdf) must be updated to match.
 
+**User manual editing rules:**
+- The HTML file (`radio_test_cli_user_manual.html`) is **hand-crafted** with extensive CSS styling (Semtech teal theme, page layout, headers/footers, table formatting). It is the authoritative source for PDF generation.
+- **NEVER regenerate the HTML using pandoc or any markdown-to-HTML converter.** This destroys all styling. Edit the HTML directly when adding or updating content.
+- The markdown file (`.md`) is a content reference only — it is NOT used to generate the HTML.
+- After editing the HTML, regenerate the PDF with `weasyprint` (see below).
+- When adding new sections, match the existing HTML structure and CSS classes (e.g. `<div class="cmd-syntax">`, `<div class="callout-warn">`).
+
 **Build for FPB-RA0E2 (baremetal):**
 ```bash
 rm -Rf build/
