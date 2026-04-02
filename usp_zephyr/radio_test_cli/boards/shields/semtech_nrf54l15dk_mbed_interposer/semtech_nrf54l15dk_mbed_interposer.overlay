@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Interposer board mapping nRF54L15 DK pins to Arduino/mbed shield header.
+ * Use with: --shield semtech_nrf54l15dk_mbed_interposer --shield semtech_lr1110mb1xxs
+ */
+
+/ {
+    arduino_header: connector {
+        compatible = "arduino-header-r3";
+        #gpio-cells = <2>;
+        gpio-map-mask = <0xffffffff 0xffffffc0>;
+        gpio-map-pass-thru = <0 0x3f>;
+        gpio-map =  <0 0 &gpio1 4 0>,      /* A0  - LR_NRESET   */
+                    <1 0 &gpio0 1 0>,      /* A1  - NC -> LED1  */
+                    <2 0 &gpio0 1 0>,      /* A2  - NC -> LED1  */
+                    <3 0 &gpio1 7 0>,      /* A3  - LR_LNA_CTRL */
+                    <4 0 &gpio1 11 0>,     /* A4  - LR_LED_TX   */
+                    <5 0 &gpio1 12 0>,     /* A5  - LR_LED_RX   */
+                    <6 0 &gpio0 1 0>,      /* D0  - NC -> LED1  */
+                    <7 0 &gpio0 1 0>,      /* D1  - NC -> LED1  */
+                    <8 0 &gpio0 1 0>,      /* D2  - NC -> LED1  */
+                    <9 0 &gpio0 3 0>,      /* D3  - LR_BUSY     */
+                    <10 0 &gpio0 2 0>,     /* D4  - LR_SNIFFING */
+                    <11 0 &gpio1 5 0>,     /* D5  - LR_DIO9     */
+                    <12 0 &gpio0 1 0>,     /* D6  - NC -> LED1  */
+                    <13 0 &gpio1 6 0>,     /* D7  - LR_NSS      */
+                    <14 0 &gpio0 1 0>,     /* D8  - NC -> LED1  */
+                    <15 0 &gpio0 1 0>,     /* D9  - NC -> LED1  */
+                    <16 0 &gpio0 1 0>,     /* D10 - NC -> LED1  */
+                    <17 0 &gpio2 8 0>,     /* D11 - LR_MOSI     */
+                    <18 0 &gpio2 9 0>,     /* D12 - LR_MISO     */
+                    <19 0 &gpio2 6 0>,     /* D13 - LR_SCK      */
+                    <20 0 &gpio2 8 0>,     /* D14 - LR_I2C_SDA  */
+                    <21 0 &gpio2 10 0>;    /* D15 - LR_I2C_SCL  */
+    };
+};
+
+&pinctrl {
+    smtc_spi_default: smtc_spi_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 2, 6)>,
+                    <NRF_PSEL(SPIM_MOSI, 2, 8)>,
+                    <NRF_PSEL(SPIM_MISO, 2, 9)>;
+        };
+    };
+
+    smtc_spi_sleep: smtc_spi_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 2, 6)>,
+                    <NRF_PSEL(SPIM_MOSI, 2, 8)>,
+                    <NRF_PSEL(SPIM_MISO, 2, 9)>;
+            low-power-enable;
+        };
+    };
+
+};
+
+arduino_spi: &spi00 {
+    status = "okay";
+    pinctrl-0 = <&smtc_spi_default>;
+    pinctrl-1 = <&smtc_spi_sleep>;
+    pinctrl-names = "default", "sleep";
+};
+
+/* Label alias required by semtech_mbed_wio_interface — not enabled */
+arduino_i2c: &i2c30 {};

@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Maps WIO shield xiao_d/xiao_spi to arduino_header for use with the
+ * semtech_nrf54l15dk_mbed_interposer board adapter.
+ *
+ * Differs from semtech_mbed_wio_interface in one entry:
+ *   xiao_d[0] (DIO) → arduino_header[11] (D5) instead of arduino_header[1] (A1)
+ *
+ * On the original mbed_interface A1 and D5 are the same physical pin, so
+ * semtech_mbed_wio_interface worked by accident.  On this interposer they
+ * are different pins: A1 is NC and D5 carries LR_DIO9.
+ */
+
+/ {
+    xiao_d: connectorXiao {
+        compatible = "semtech,mbed-wio-interface";
+        #gpio-cells = <2>;
+        gpio-map-mask = <0xffffffff 0xffffffc0>;
+        gpio-map-pass-thru = <0 0x3f>;
+        gpio-map = <0 0 &arduino_header 11 0>, /* D0 → D5 (LR_DIO9) */
+                   <1 0 &arduino_header 9 0>,  /* D1 → D3 (LR_BUSY) */
+                   <2 0 &arduino_header 0 0>,  /* D2 → A0 (LR_NRESET) */
+                   <3 0 &arduino_header 13 0>, /* D3 → D7 (LR_NSS) */
+                   <4 0 &arduino_header 15 0>, /* D4 → D9 */
+                   <5 0 &arduino_header 21 0>, /* D5 → D15 */
+                   <6 0 &arduino_header 3 0>,  /* D6 → A3 (LR_LNA_CTRL) */
+                   <7 0 &arduino_header 14 0>, /* D7 → D8 */
+                   <8 0 &arduino_header 19 0>, /* D8 → D13 */
+                   <9 0 &arduino_header 18 0>, /* D9 → D12 */
+                   <10 0 &arduino_header 17 0>; /* D10 → D11 */
+    };
+};
+
+xiao_spi: &arduino_spi {};
+xiao_i2c: &arduino_i2c {};

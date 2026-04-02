@@ -1,12 +1,37 @@
 /*
  * Device tree overlay for radio_test_cli on nRF54L15 DK.
  *
- * Radio pin configuration is provided by the
- * semtech_nrf54l15dk_mbed_interface shield overlay.
- * This file adds any application-specific settings.
+ * Radio pin configuration is provided by the shield overlay
+ * (e.g. semtech_nrf54l15dk_mbed_interposer + semtech_lr1110mb1xxs).
+ * This file adds UART console routing — the DK's J-Link virtual COM
+ * port is on uart30, not the default uart20.
  *
  * Copyright (c) 2025 Semtech Corporation
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-/* Placeholder — shield provides radio pin configuration */
+/ {
+	chosen {
+		zephyr,console    = &uart30;
+		zephyr,shell-uart = &uart30;
+	};
+};
+
+&uart20 {
+	status = "disabled";
+};
+
+&spi00 {
+	mx25r64: mx25r6435f@0 {
+		status = "disabled";
+	};
+};
+
+&uart30 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+	/delete-property/ hw-flow-control;
+};

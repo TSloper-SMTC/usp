@@ -1,0 +1,2 @@
+config SHIELD_SEMTECH_INTERPOSER_WIO_INTERFACE
+	def_bool $(shields_list_contains,semtech_interposer_wio_interface)

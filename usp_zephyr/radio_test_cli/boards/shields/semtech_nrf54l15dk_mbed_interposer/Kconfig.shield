@@ -1,0 +1,2 @@
+config SHIELD_SEMTECH_NRF54L15DK_MBED_INTERPOSER
+	def_bool $(shields_list_contains,semtech_nrf54l15dk_mbed_interposer)
