@@ -66,8 +66,8 @@
 /* XOSC crystal load capacitor trim (XTAL boards only)
  * xta_pf = 11.3 + xta * 0.47,  xtb_pf = 11.1 + xtb * 0.47
  * FTR5238-A0 crystal (CL=10 pF), ~2 pF PCB stray. */
-#define LR20XX_XOSC_XTA           0x14   /* 18.7 pF */
-#define LR20XX_XOSC_XTB           0x14   /* 18.5 pF */
+#define LR20XX_XOSC_XTA           0x14   /* 20.7 pF */
+#define LR20XX_XOSC_XTB           0x14   /* 20.5 pF */
 #define LR20XX_XOSC_WAIT_US       150
 
 /*

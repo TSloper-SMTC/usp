@@ -1018,20 +1018,22 @@ boost-hf &lt;auto|0-7&gt;</div>
 
 <h2><code>xosc</code> — Crystal Oscillator Trimming</h2>
 
-<div class="cmd-syntax">xosc &lt;show|default|xta|xtb|wait&gt; [value]</div>
+<div class="cmd-syntax">xosc &lt;show|default|xta|xtb[|wait]&gt; [value]</div>
 
-<p>Manages crystal oscillator trimming capacitor values. Available on LR20xx chips only.</p>
+<p>Manages crystal oscillator trimming capacitor values. Available on LR20xx and SX126x chips.</p>
 
 <table>
-<thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
+<thead><tr><th>Subcommand</th><th>Chips</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>xosc show</code></td><td>Display current XTA, XTB, and wait values (with pF conversion)</td></tr>
-<tr><td><code>xosc default</code></td><td>Restore BSP default trim values</td></tr>
-<tr><td><code>xosc xta &lt;0-47&gt;</code></td><td>Set XTA capacitor trim (11.3 + N * 0.47 pF)</td></tr>
-<tr><td><code>xosc xtb &lt;0-47&gt;</code></td><td>Set XTB capacitor trim (11.1 + N * 0.47 pF)</td></tr>
-<tr><td><code>xosc wait &lt;0-255&gt;</code></td><td>Set stabilization delay in microseconds</td></tr>
+<tr><td><code>xosc show</code></td><td>All</td><td>Display current XTA and XTB values (with pF conversion)</td></tr>
+<tr><td><code>xosc default</code></td><td>All</td><td>Restore BSP default trim values</td></tr>
+<tr><td><code>xosc xta &lt;0-47&gt;</code></td><td>All</td><td>Set XTA capacitor trim (11.3 + N &times; 0.47 pF)</td></tr>
+<tr><td><code>xosc xtb &lt;0-47&gt;</code></td><td>All</td><td>Set XTB capacitor trim (11.1 + N &times; 0.47 pF)</td></tr>
+<tr><td><code>xosc wait &lt;0-255&gt;</code></td><td>LR20xx only</td><td>Set stabilization delay in microseconds</td></tr>
 </tbody>
 </table>
+
+<p>On SX126x the XOSC stabilisation delay is managed by the hardware state machine and is not user-configurable; <code>xosc wait</code> is not available. Values set via <code>xosc xta</code>/<code>xosc xtb</code> persist across CLI commands and are re-applied automatically before every TX/RX operation.</p>
 
 <h2><code>status</code> — Show Current Configuration</h2>
 
@@ -1552,7 +1554,7 @@ EOF</code></pre>
 <tr><td>PER TX/RX</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
 <tr><td>AGC control</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
 <tr><td>RX boost (LF/HF)</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
-<tr><td>XOSC trimming</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>XOSC trimming</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
 <tr><td>LED indicators</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
 <tr><td>I/Q polarity</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
 <tr><td>LDRO control</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
@@ -1574,7 +1576,7 @@ EOF</code></pre>
 <tr><td><code>agc</code></td><td><code>agc &lt;auto|g1-g13&gt;</code></td><td>Receiver gain control (LR20xx only)</td></tr>
 <tr><td><code>boost-lf</code></td><td><code>boost-lf &lt;auto|0-7&gt;</code></td><td>RX boost level, LF path (LR20xx only)</td></tr>
 <tr><td><code>boost-hf</code></td><td><code>boost-hf &lt;auto|0-7&gt;</code></td><td>RX boost level, HF path (LR20xx only)</td></tr>
-<tr><td><code>xosc</code></td><td><code>xosc &lt;show|default|xta|xtb|wait&gt;</code></td><td>Crystal oscillator trimming (LR20xx only)</td></tr>
+<tr><td><code>xosc</code></td><td><code>xosc &lt;show|default|xta|xtb[|wait]&gt;</code></td><td>Crystal oscillator trimming (LR20xx + SX126x; <code>wait</code> LR20xx only)</td></tr>
 <tr><td><code>status</code></td><td><code>status</code></td><td>Show complete current configuration</td></tr>
 <tr><td><code>bw</code></td><td><code>bw &lt;kHz&gt;</code></td><td>LoRa bandwidth (125/250/500/812)</td></tr>
 <tr><td><code>sf</code></td><td><code>sf &lt;5-12&gt;</code></td><td>LoRa spreading factor</td></tr>

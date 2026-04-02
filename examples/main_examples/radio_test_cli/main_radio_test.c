@@ -386,7 +386,7 @@ int main( int argc, char* argv[] )
     /* Initialize config state */
     cli_state_init( &g_config );
 
-    /* Seed XOSC defaults from BSP (LR20xx only; NULL on other chips) */
+    /* Seed XOSC defaults from BSP (LR20xx and SX126x; NULL on other chips) */
     if( g_chip->get_xosc_defaults != NULL )
     {
         g_chip->get_xosc_defaults( &g_config.xosc_xta, &g_config.xosc_xtb, &g_config.xosc_wait_us );

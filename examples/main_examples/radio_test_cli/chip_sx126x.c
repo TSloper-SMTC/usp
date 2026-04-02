@@ -50,6 +50,66 @@ void chip_set_radio_context( const void* ctx )
 }
 
 /*
+ * --- XOSC trim state ---
+ *
+ * The SX126x resets XTA/XTB to 0x12 every time it enters STDBY_XOSC.
+ * We track the user-requested values here and re-apply them before every
+ * TX/RX/CW operation (by switching to STDBY_XOSC first, writing trim,
+ * then issuing the TX/RX command).
+ */
+
+static uint8_t g_xosc_xta = SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC;
+static uint8_t g_xosc_xtb = SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC;
+
+/* Apply stored trim values to hardware.  Must only be called on XTAL boards. */
+static int sx126x_apply_trim_hw( void )
+{
+    sx126x_status_t rc;
+    rc = sx126x_set_standby( radio_context, SX126X_STANDBY_CFG_XOSC );
+    if( rc != SX126X_STATUS_OK )
+    {
+        return -1;
+    }
+    rc = sx126x_set_trimming_capacitor_values( radio_context, g_xosc_xta, g_xosc_xtb );
+    return ( rc == SX126X_STATUS_OK ) ? 0 : -1;
+}
+
+static int sx126x_chip_apply_xosc_trim( uint8_t xta, uint8_t xtb, uint8_t wait_us )
+{
+    ( void ) wait_us; /* SX126x hardware manages stabilisation — no user wait */
+
+    ral_xosc_cfg_t              xosc_cfg;
+    sx126x_tcxo_ctrl_voltages_t tcxo_voltage;
+    uint32_t                    tcxo_startup_time;
+    ral_sx126x_bsp_get_xosc_cfg( radio_context, &xosc_cfg, &tcxo_voltage, &tcxo_startup_time );
+    if( xosc_cfg != RAL_XOSC_CFG_XTAL )
+    {
+        fprintf( stderr, "xosc: trim not applicable on TCXO boards\n" );
+        return -1;
+    }
+    g_xosc_xta = xta;
+    g_xosc_xtb = xtb;
+    return sx126x_apply_trim_hw();
+}
+
+static void sx126x_chip_get_xosc_defaults( uint8_t* xta, uint8_t* xtb, uint8_t* wait_us )
+{
+    *xta     = SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC;
+    *xtb     = SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC;
+    *wait_us = 0;
+}
+
+/* Re-apply trim before a radio operation if the user has set non-default values. */
+static void sx126x_ensure_trim( void )
+{
+    if( g_xosc_xta != SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC ||
+        g_xosc_xtb != SX126X_XTAL_TRIMMING_CAPACITOR_DEFAULT_VALUE_STDBY_XOSC )
+    {
+        sx126x_apply_trim_hw();
+    }
+}
+
+/*
  * --- PA state ---
  *
  * PA config is computed by ral_sx126x_bsp_get_tx_cfg() on every
@@ -472,12 +532,14 @@ static int sx126x_chip_apply_config( const radio_config_t* cfg )
 
 static int sx126x_chip_start_tx_cw( void )
 {
+    sx126x_ensure_trim();
     sx126x_status_t rc = sx126x_set_tx_cw( radio_context );
     return ( rc == SX126X_STATUS_OK ) ? 0 : -1;
 }
 
 static int sx126x_chip_start_tx_infinite_preamble( void )
 {
+    sx126x_ensure_trim();
     sx126x_status_t rc = sx126x_set_tx_infinite_preamble( radio_context );
     return ( rc == SX126X_STATUS_OK ) ? 0 : -1;
 }
@@ -485,6 +547,8 @@ static int sx126x_chip_start_tx_infinite_preamble( void )
 static int sx126x_chip_start_tx( const uint8_t* payload, uint8_t len, uint32_t timeout_ms )
 {
     sx126x_status_t rc;
+
+    sx126x_ensure_trim();
 
     /* Update pld_len for this TX (critical for implicit header mode) */
     sx126x_pkt_params_lora_t pkt_params = cached_lora_pkt_params;
@@ -508,6 +572,8 @@ static int sx126x_chip_start_tx( const uint8_t* payload, uint8_t len, uint32_t t
 static int sx126x_chip_start_rx( uint32_t timeout_ms )
 {
     sx126x_status_t rc;
+
+    sx126x_ensure_trim();
 
     if( timeout_ms == 0 )
     {
@@ -738,6 +804,8 @@ static int sx126x_chip_receive_packet( uint8_t* buf, uint8_t* buf_len, uint32_t 
 {
     sx126x_status_t rc;
 
+    sx126x_ensure_trim();
+
     rc = sx126x_set_rx( radio_context, timeout_ms );
     if( rc != SX126X_STATUS_OK )
     {
@@ -925,8 +993,11 @@ static const chip_driver_t sx126x_driver = {
     .read_rx_packet             = sx126x_chip_read_rx_packet,
     .wait_tx_done               = sx126x_chip_wait_tx_done,
     .receive_packet             = sx126x_chip_receive_packet,
-    .apply_xosc_trim            = NULL, /* not supported on SX126x */
-    .get_xosc_defaults          = NULL, /* not supported on SX126x */
+    .apply_xosc_trim            = sx126x_chip_apply_xosc_trim,
+    .get_xosc_defaults          = sx126x_chip_get_xosc_defaults,
+    .xosc_has_wait              = false,
+    .xosc_xta_min_pf            = 11.3, /* SX1261/2 DS Table 4-1 */
+    .xosc_xtb_min_pf            = 11.3, /* SX1261/2 DS Table 4-1 (no XTA/XTB distinction) */
 };
 
 const chip_driver_t* chip_get_driver( void )

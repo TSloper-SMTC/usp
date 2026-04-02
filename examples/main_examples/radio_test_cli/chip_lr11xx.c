@@ -1009,6 +1009,9 @@ static const chip_driver_t lr11xx_driver = {
     .receive_packet             = lr11xx_receive_packet,
     .apply_xosc_trim            = NULL, /* not supported on LR11xx */
     .get_xosc_defaults          = NULL, /* not supported on LR11xx */
+    .xosc_has_wait              = false,
+    .xosc_xta_min_pf            = 0.0, /* N/A — xosc trim not supported */
+    .xosc_xtb_min_pf            = 0.0, /* N/A — xosc trim not supported */
 };
 
 const chip_driver_t* chip_get_driver( void )

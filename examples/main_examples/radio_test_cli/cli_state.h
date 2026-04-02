@@ -225,7 +225,7 @@ typedef struct radio_config_s
     bool term_ansi;         /* true = linenoise (ANSI), false = plain echo */
 #endif
 
-    /* XOSC capacitor trim (LR20xx only) — seeded from BSP at startup */
+    /* XOSC capacitor trim (LR20xx and SX126x) — seeded from BSP at startup */
     uint8_t xosc_xta;       /* XTA cap trim 0-47 */
     uint8_t xosc_xtb;       /* XTB cap trim 0-47 */
     uint8_t xosc_wait_us;   /* XOSC stabilization delay µs */

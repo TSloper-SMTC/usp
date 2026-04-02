@@ -1019,24 +1019,26 @@ static int cmd_per( const tokenized_t* tokens, radio_config_t* cfg, const chip_d
     return -1;
 }
 
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
 /*
  * --- Command: xosc ---
  *
- * xosc show             Show current XTA/XTB/wait values
+ * xosc show             Show current XTA/XTB values (and wait on LR20xx)
  * xosc xta <0-47>       Set XTA capacitor trim
  * xosc xtb <0-47>       Set XTB capacitor trim
- * xosc wait <0-255>     Set stabilization delay (µs)
+ * xosc wait <0-255>     Set stabilization delay (µs) — LR20xx only
  */
-static void xosc_print( const radio_config_t* cfg )
+static void xosc_print( const radio_config_t* cfg, const chip_driver_t* chip )
 {
-    /* xta_pf = 11.3 + xta * 0.47,  xtb_pf = 11.1 + xtb * 0.47 */
-    double xta_pf = 11.3 + cfg->xosc_xta * 0.47;
-    double xtb_pf = 11.1 + cfg->xosc_xtb * 0.47;
+    double xta_pf = chip->xosc_xta_min_pf + cfg->xosc_xta * 0.47;
+    double xtb_pf = chip->xosc_xtb_min_pf + cfg->xosc_xtb * 0.47;
     printf( "XOSC trim:\n" );
     printf( "  xta:  0x%02X (%u) -> %.1f pF\n", cfg->xosc_xta, cfg->xosc_xta, xta_pf );
     printf( "  xtb:  0x%02X (%u) -> %.1f pF\n", cfg->xosc_xtb, cfg->xosc_xtb, xtb_pf );
-    printf( "  wait: %u us\n", cfg->xosc_wait_us );
+    if( chip->xosc_has_wait )
+    {
+        printf( "  wait: %u us\n", cfg->xosc_wait_us );
+    }
 }
 
 static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_driver_t* chip )
@@ -1050,12 +1052,15 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
     /* xosc show — print current values */
     if( tokens->count < 2 )
     {
-        printf( "ERROR: Usage: xosc <show|default|xta|xtb|wait>\n" );
+        if( chip->xosc_has_wait )
+            printf( "ERROR: Usage: xosc <show|default|xta|xtb|wait>\n" );
+        else
+            printf( "ERROR: Usage: xosc <show|default|xta|xtb>\n" );
         return -1;
     }
     if( strcasecmp( tokens->tokens[1], "show" ) == 0 )
     {
-        xosc_print( cfg );
+        xosc_print( cfg, chip );
         return 0;
     }
 
@@ -1074,7 +1079,7 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
             return -1;
         }
         printf( "XOSC trim restored to defaults:\n" );
-        xosc_print( cfg );
+        xosc_print( cfg, chip );
         return 0;
     }
 
@@ -1105,7 +1110,7 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
             printf( "ERROR: apply_xosc_trim failed\n" );
             return -1;
         }
-        double pf = 11.3 + cfg->xosc_xta * 0.47;
+        double pf = chip->xosc_xta_min_pf + cfg->xosc_xta * 0.47;
         printf( "XOSC xta set: 0x%02X (%u) -> %.1f pF\n", cfg->xosc_xta, cfg->xosc_xta, pf );
         return 0;
     }
@@ -1123,13 +1128,19 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
             printf( "ERROR: apply_xosc_trim failed\n" );
             return -1;
         }
-        double pf = 11.1 + cfg->xosc_xtb * 0.47;
+        double pf = chip->xosc_xtb_min_pf + cfg->xosc_xtb * 0.47;
         printf( "XOSC xtb set: 0x%02X (%u) -> %.1f pF\n", cfg->xosc_xtb, cfg->xosc_xtb, pf );
         return 0;
     }
 
     if( strcasecmp( tokens->tokens[1], "wait" ) == 0 )
     {
+        if( !chip->xosc_has_wait )
+        {
+            printf( "ERROR: xosc wait not applicable on %s (stabilisation is hardware-managed)\n",
+                    chip->chip_name );
+            return -1;
+        }
         if( val < 0 || val > 255 )
         {
             printf( "ERROR: wait must be 0-255\n" );
@@ -1145,11 +1156,15 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
         return 0;
     }
 
-    printf( "ERROR: Unknown xosc subcommand '%s'. Valid: show, default, xta, xtb, wait\n",
-            tokens->tokens[1] );
+    if( chip->xosc_has_wait )
+        printf( "ERROR: Unknown xosc subcommand '%s'. Valid: show, default, xta, xtb, wait\n",
+                tokens->tokens[1] );
+    else
+        printf( "ERROR: Unknown xosc subcommand '%s'. Valid: show, default, xta, xtb\n",
+                tokens->tokens[1] );
     return -1;
 }
-#endif /* LR20XX */
+#endif /* LR20XX || SX126X */
 
 /*
  * --- Command: pld ---
@@ -1235,13 +1250,15 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         printf( "\nPA config:\n" );
         printf( "  pa show                    Show PA parameters\n" );
         printf( "  pa <param> <value>         Set PA parameter (use 'pa show' to list)\n" );
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
         printf( "\nXOSC trim:\n" );
-        printf( "  xosc show                  Show XTA/XTB/wait values\n" );
+        printf( "  xosc show                  Show XTA/XTB values\n" );
         printf( "  xosc default               Restore factory defaults\n" );
         printf( "  xosc xta <0-47>            Set XTA capacitor trim\n" );
         printf( "  xosc xtb <0-47>            Set XTB capacitor trim\n" );
+#if defined( LR20XX )
         printf( "  xosc wait <0-255>          Set stabilization delay (us)\n" );
+#endif
 #endif
 
         printf( "\nTest modes:\n" );
@@ -1533,33 +1550,43 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         return;
     }
 
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
     if( strcasecmp( topic, "xosc" ) == 0 )
     {
-        printf( "xosc — crystal oscillator capacitor trim (LR20xx only)\n" );
+        printf( "xosc — crystal oscillator capacitor trim\n" );
         printf( "  Current settings:\n" );
         printf( "    xta:  0x%02X (%u) -> %.1f pF\n",
-                cfg->xosc_xta, cfg->xosc_xta, 11.3 + cfg->xosc_xta * 0.47 );
+                cfg->xosc_xta, cfg->xosc_xta, chip->xosc_xta_min_pf + cfg->xosc_xta * 0.47 );
         printf( "    xtb:  0x%02X (%u) -> %.1f pF\n",
-                cfg->xosc_xtb, cfg->xosc_xtb, 11.1 + cfg->xosc_xtb * 0.47 );
-        printf( "    wait: %u us\n", cfg->xosc_wait_us );
+                cfg->xosc_xtb, cfg->xosc_xtb,
+                chip->xosc_xtb_min_pf + cfg->xosc_xtb * 0.47 );
+        if( chip->xosc_has_wait )
+            printf( "    wait: %u us\n", cfg->xosc_wait_us );
         printf( "\n" );
         printf( "  Subcommands:\n" );
-        printf( "    xosc show                Show current XTA/XTB/wait values\n" );
-        printf( "    xosc default             Restore factory defaults (0x14/0x14/150 us)\n" );
+        printf( "    xosc show                Show current XTA/XTB values\n" );
+        if( chip->xosc_has_wait )
+            printf( "    xosc default             Restore factory defaults (0x14/0x14/150 us)\n" );
+        else
+            printf( "    xosc default             Restore factory defaults (0x12/0x12)\n" );
         printf( "    xosc xta <0-47>          Set XTA capacitor trim\n" );
         printf( "    xosc xtb <0-47>          Set XTB capacitor trim\n" );
-        printf( "    xosc wait <0-255>        Set stabilization delay (us)\n" );
+        if( chip->xosc_has_wait )
+            printf( "    xosc wait <0-255>        Set stabilization delay (us)\n" );
         printf( "\n" );
         printf( "  Capacitance formula:\n" );
-        printf( "    xta_pf = 11.3 + xta * 0.47\n" );
-        printf( "    xtb_pf = 11.1 + xtb * 0.47\n" );
-        printf( "  Trim range: 0 (11.3/11.1 pF) to 47 (33.4/33.2 pF)\n" );
+        printf( "    xta_pf = %.1f + xta * 0.47\n", chip->xosc_xta_min_pf );
+        printf( "    xtb_pf = %.1f + xtb * 0.47\n", chip->xosc_xtb_min_pf );
+        printf( "  Trim range: 0 (%.1f/%.1f pF) to 47 (%.1f/%.1f pF)\n",
+                chip->xosc_xta_min_pf, chip->xosc_xtb_min_pf,
+                chip->xosc_xta_min_pf + 47 * 0.47, chip->xosc_xtb_min_pf + 47 * 0.47 );
         printf( "  Accepts decimal or hex (0x) values.\n" );
         printf( "\n" );
         printf( "  Example: xosc xta 0x0A\n" );
         printf( "  Example: xosc xtb 10\n" );
+#if defined( LR20XX )
         printf( "  Example: xosc wait 200\n" );
+#endif
         return;
     }
 #endif
@@ -1687,7 +1714,7 @@ int cli_execute( const char* line, radio_config_t* cfg, const chip_driver_t* chi
         return cmd_pa( &tokens, cfg, chip );
     if( strcasecmp( cmd, "per" ) == 0 )
         return cmd_per( &tokens, cfg, chip );
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
     if( strcasecmp( cmd, "xosc" ) == 0 )
         return cmd_xosc( &tokens, cfg, chip );
 #endif
@@ -1746,7 +1773,7 @@ static const char* standard_commands[] = {
 #endif
     "status", "start", "stop", "show", "pa",
     "per", "pld",
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
     "xosc",
 #endif
 #ifdef __linux__
@@ -1768,6 +1795,8 @@ static const char* term_subcmds[]  = { "ansi", "plain", NULL };
 #endif
 #if defined( LR20XX )
 static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", "wait", NULL };
+#elif defined( SX126X )
+static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", NULL };
 #endif
 #if defined( LR20XX )
 static const char* agc_completions[] = {
@@ -1948,7 +1977,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
         {
             values = per_subcmds;
         }
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
         else if( strncasecmp( buf, "xosc", cmd_len ) == 0 && cmd_len == 4 )
         {
             values = xosc_subcmds;
@@ -1981,7 +2010,7 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             help_topics[j++] = "pld";
             help_topics[j++] = "pa";
             help_topics[j++] = "per";
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
             help_topics[j++] = "xosc";
 #endif
             help_topics[j++] = "start";
@@ -2143,15 +2172,21 @@ char* cli_hints( const char* buf, int* color, int* bold )
         return "<show|reset|param value>";
     if( strcasecmp( buf, "per " ) == 0 )
         return "<count|interval|payload|stats|reset>";
-#if defined( LR20XX )
+#if defined( LR20XX ) || defined( SX126X )
     if( strcasecmp( buf, "xosc " ) == 0 )
+#if defined( LR20XX )
         return "<show|default|xta|xtb|wait>";
+#else
+        return "<show|default|xta|xtb>";
+#endif
     if( strncasecmp( buf, "xosc xta ", 9 ) == 0 && strlen( buf ) == 9 )
         return "<0-47>";
     if( strncasecmp( buf, "xosc xtb ", 9 ) == 0 && strlen( buf ) == 9 )
         return "<0-47>";
+#if defined( LR20XX )
     if( strncasecmp( buf, "xosc wait ", 10 ) == 0 && strlen( buf ) == 10 )
         return "<0-255>";
+#endif
 #endif
 #ifdef __linux__
     if( strcasecmp( buf, "delay " ) == 0 )

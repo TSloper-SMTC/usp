@@ -1306,6 +1306,9 @@ static const chip_driver_t lr20xx_driver = {
     .receive_packet           = lr20xx_receive_packet,
     .apply_xosc_trim          = lr20xx_apply_xosc_trim,
     .get_xosc_defaults        = lr20xx_get_xosc_defaults,
+    .xosc_has_wait            = true,
+    .xosc_xta_min_pf          = 11.3, /* LR2021 DS Table 6-67 */
+    .xosc_xtb_min_pf          = 11.1, /* LR2021 DS Table 6-68 */
 };
 
 const chip_driver_t* chip_get_driver( void )

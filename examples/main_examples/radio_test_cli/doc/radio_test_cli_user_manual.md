@@ -441,18 +441,20 @@ Sets the RX boost level for the low-frequency (`boost-lf`) or high-frequency (`b
 #### `xosc`
 
 ```
-xosc <show|default|xta|xtb|wait> [value]
+xosc <show|default|xta|xtb[|wait]> [value]
 ```
 
-Manages crystal oscillator trimming capacitor values. Available on LR20xx chips only.
+Manages crystal oscillator trimming capacitor values. Available on LR20xx and SX126x chips.
 
-| Subcommand | Description |
-|------------|-------------|
-| `xosc show` | Display current XTA, XTB, and wait values (with pF conversion) |
-| `xosc default` | Restore BSP default trim values |
-| `xosc xta <0-47>` | Set XTA capacitor trim (11.3 + N * 0.47 pF) |
-| `xosc xtb <0-47>` | Set XTB capacitor trim (11.1 + N * 0.47 pF) |
-| `xosc wait <0-255>` | Set stabilization delay in microseconds |
+| Subcommand | Chips | Description |
+|------------|-------|-------------|
+| `xosc show` | All | Display current XTA and XTB values (with pF conversion) |
+| `xosc default` | All | Restore BSP default trim values |
+| `xosc xta <0-47>` | All | Set XTA capacitor trim (11.3 + N × 0.47 pF) |
+| `xosc xtb <0-47>` | All | Set XTB capacitor trim (11.1 + N × 0.47 pF) |
+| `xosc wait <0-255>` | LR20xx only | Set stabilization delay in microseconds |
+
+On SX126x the XOSC stabilisation delay is managed by the hardware state machine and is not user-configurable; `xosc wait` is not available. Values set via `xosc xta`/`xosc xtb` persist across CLI commands and are re-applied automatically before every TX/RX operation.
 
 #### `status`
 
@@ -965,7 +967,7 @@ Region parameters, chip feature matrix, and the complete command quick-reference
 | PER TX/RX | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | AGC control | ✓ | ✓ | — | — | — | — | — | — |
 | RX boost (LF/HF) | ✓ | ✓ | — | — | — | — | — | — |
-| XOSC trimming | ✓ | ✓ | — | — | — | — | — | — |
+| XOSC trimming | ✓ | ✓ | — | — | — | ✓ | ✓ | ✓ |
 | LED indicators | — | — | ✓ | ✓ | ✓ | — | — | — |
 | I/Q polarity | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | LDRO control | — | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -982,7 +984,7 @@ Region parameters, chip feature matrix, and the complete command quick-reference
 | `agc` | `agc <auto\|g1-g13>` | Receiver gain control (LR20xx only) |
 | `boost-lf` | `boost-lf <auto\|0-7>` | RX boost level, LF path (LR20xx only) |
 | `boost-hf` | `boost-hf <auto\|0-7>` | RX boost level, HF path (LR20xx only) |
-| `xosc` | `xosc <show\|default\|xta\|xtb\|wait>` | Crystal oscillator trimming (LR20xx only) |
+| `xosc` | `xosc <show\|default\|xta\|xtb[\|wait]>` | Crystal oscillator trimming (LR20xx + SX126x; `wait` LR20xx only) |
 | `status` | `status` | Show complete current configuration |
 | `bw` | `bw <kHz>` | LoRa bandwidth (125/250/500/812) |
 | `sf` | `sf <5-12>` | LoRa spreading factor |

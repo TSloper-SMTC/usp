@@ -166,18 +166,37 @@ typedef struct
 
     /**
      * Apply XOSC capacitor trim values immediately to hardware.
-     * xta and xtb are in the range 0-47; wait_us is the stabilization delay.
-     * Returns 0 on success, -1 on failure.
-     * May be NULL if the chip does not support XOSC trim (e.g. SX126x).
+     * xta and xtb are in the range 0-47; wait_us is the stabilization delay
+     * (LR20xx only — SX126x ignores wait_us, the hardware handles stabilisation).
+     * Returns 0 on success, -1 on failure.  NULL if chip has no XOSC trim.
      */
     int ( *apply_xosc_trim )( uint8_t xta, uint8_t xtb, uint8_t wait_us );
 
     /**
      * Read the BSP default XOSC trim values for this board.
      * Used to seed cli_state and to restore defaults via 'xosc default'.
-     * May be NULL if the chip does not support XOSC trim (e.g. SX126x).
+     * NULL if chip has no XOSC trim.
      */
     void ( *get_xosc_defaults )( uint8_t* xta, uint8_t* xtb, uint8_t* wait_us );
+
+    /**
+     * True if the chip supports a user-configurable XOSC stabilisation delay
+     * (wait_us).  False for SX126x, where stabilisation is hardware-managed.
+     */
+    bool xosc_has_wait;
+
+    /**
+     * Minimum capacitance of the XTA trimming capacitor in pF (reg value 0x00).
+     * LR2021 DS Table 6-67: 11.3 pF.  SX1261/2 DS Table 4-1: 11.3 pF.
+     */
+    double xosc_xta_min_pf;
+
+    /**
+     * Minimum capacitance of the XTB trimming capacitor in pF (reg value 0x00).
+     * LR2021 DS Table 6-68: 11.1 pF.
+     * SX1261/2 DS Table 4-1: 11.3 pF (no distinction between XTA and XTB).
+     */
+    double xosc_xtb_min_pf;
 } chip_driver_t;
 
 /**
