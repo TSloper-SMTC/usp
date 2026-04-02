@@ -83,9 +83,15 @@ extern "C" {
 #define RADIO_BUSY_PIN P409     // ARDUINO_D3 / RADIO_BUSY
 #define RADIO_DIO_MAIN P201         // ARDUINO_D5 / RADIO_DIO (IRQ5, active-high, rising edge)
 #define RADIO_LNA_CTRL NC       // TBD if using external LNA for GNSS
-#define SMTC_LED_RX P103        // LED1
-#define SMTC_LED_TX P102        // LED2
+#if defined( LR11XX_TRANSCEIVER )
+#define SMTC_LED_TX   P009      // ARDUINO_A4 (LR11xx shield TX LED)
+#define SMTC_LED_RX   P008      // ARDUINO_A5 (LR11xx shield RX LED)
+#define SMTC_LED_SCAN P408      // ARDUINO_D4 (LR11xx shield scan LED)
+#else
+#define SMTC_LED_TX   NC
+#define SMTC_LED_RX   NC
 #define SMTC_LED_SCAN NC
+#endif
 #define EXTI_BUTTON P200        // User button (active-low, falling edge)
 #define HW_MODEM_COMMAND_PIN NC
 #define HW_MODEM_EVENT_PIN NC

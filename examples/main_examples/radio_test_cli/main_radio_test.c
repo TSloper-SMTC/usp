@@ -497,6 +497,8 @@ int main( int argc, char* argv[] )
                     linenoiseHide( &ls );
                 }
                 printf( "\nInterrupted - stopping...\n" );
+                hal_led_set( HAL_LED_TX, false );
+                hal_led_set( HAL_LED_RX, false );
                 g_chip->stop();
                 g_config.active_mode = MODE_IDLE;
                 if( editing )
@@ -550,6 +552,8 @@ int main( int argc, char* argv[] )
                     if( g_config.active_mode != MODE_IDLE )
                     {
                         printf( "Interrupted - stopping...\n" );
+                        hal_led_set( HAL_LED_TX, false );
+                        hal_led_set( HAL_LED_RX, false );
                         g_chip->stop();
                         g_config.active_mode = MODE_IDLE;
                     }
@@ -610,6 +614,8 @@ int main( int argc, char* argv[] )
                     else if( g_config.active_mode != MODE_IDLE )
                     {
                         printf( "Interrupted - stopping...\n" );
+                        hal_led_set( HAL_LED_TX, false );
+                        hal_led_set( HAL_LED_RX, false );
                         g_chip->stop();
                         g_config.active_mode = MODE_IDLE;
                     }
