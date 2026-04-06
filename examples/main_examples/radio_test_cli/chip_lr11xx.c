@@ -1011,6 +1011,7 @@ static const chip_driver_t lr11xx_driver = {
     .get_temp                   = NULL,
     .set_temp_comp              = NULL,
     .set_ntc_params             = NULL,
+    .get_ntc_defaults           = NULL,
     .apply_xosc_trim            = NULL, /* not supported on LR11xx */
     .get_xosc_defaults          = NULL, /* not supported on LR11xx */
     .xosc_has_wait              = false,

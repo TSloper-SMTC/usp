@@ -997,6 +997,7 @@ static const chip_driver_t sx126x_driver = {
     .get_temp                   = NULL,
     .set_temp_comp              = NULL,
     .set_ntc_params             = NULL,
+    .get_ntc_defaults           = NULL,
     .apply_xosc_trim            = sx126x_chip_apply_xosc_trim,
     .get_xosc_defaults          = sx126x_chip_get_xosc_defaults,
     .xosc_has_wait              = false,

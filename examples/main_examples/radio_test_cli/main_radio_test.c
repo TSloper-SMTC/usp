@@ -392,6 +392,16 @@ int main( int argc, char* argv[] )
         g_chip->get_xosc_defaults( &g_config.xosc_xta, &g_config.xosc_xtb, &g_config.xosc_wait_us );
     }
 
+    /* Seed NTC defaults from BSP and apply to chip (LR20xx only) */
+    if( g_chip->get_ntc_defaults != NULL )
+    {
+        g_chip->get_ntc_defaults( &g_config.ntc_ratio, &g_config.ntc_beta, &g_config.ntc_delay );
+        if( g_chip->set_ntc_params != NULL && g_config.ntc_ratio != 0 )
+        {
+            g_chip->set_ntc_params( g_config.ntc_ratio, g_config.ntc_beta, g_config.ntc_delay );
+        }
+    }
+
 #ifdef __linux__
     /* Install signal handler for Ctrl+C */
     struct sigaction sa;

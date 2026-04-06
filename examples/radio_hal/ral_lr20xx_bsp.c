@@ -66,9 +66,14 @@
 /* XOSC crystal load capacitor trim (XTAL boards only)
  * xta_pf = 11.3 + xta * 0.47,  xtb_pf = 11.1 + xtb * 0.47
  * FTR5238-A0 crystal (CL=10 pF), ~2 pF PCB stray. */
-#define LR20XX_XOSC_XTA           0x14   /* 20.7 pF */
-#define LR20XX_XOSC_XTB           0x14   /* 20.5 pF */
+#define LR20XX_XOSC_XTA           0x13   /* 20.2 pF */
+#define LR20XX_XOSC_XTB           0x13   /* 20.0 pF */
 #define LR20XX_XOSC_WAIT_US       150
+
+/* NTC thermistor defaults (ERT-JZER104F, 100 kΩ, B=4250 K, 120 kΩ bias) */
+#define LR20XX_NTC_RATIO_F        1.2f   /* R_bias / R_NTC_25C = 120k / 100k */
+#define LR20XX_NTC_BETA_K         4250   /* Beta coefficient in Kelvin */
+#define LR20XX_NTC_DELAY           0
 
 /*
  * -----------------------------------------------------------------------------
@@ -506,6 +511,13 @@ void ral_lr20xx_bsp_get_xosc_trim( const void* context, uint8_t* xta, uint8_t* x
     *xta          = LR20XX_XOSC_XTA;
     *xtb          = LR20XX_XOSC_XTB;
     *wait_time_us = LR20XX_XOSC_WAIT_US;
+}
+
+void ral_lr20xx_bsp_get_ntc_defaults( const void* context, uint16_t* ratio_reg, uint16_t* beta_reg, uint8_t* delay )
+{
+    *ratio_reg = ( uint16_t )( LR20XX_NTC_RATIO_F * 512.0f + 0.5f );
+    *beta_reg  = LR20XX_NTC_BETA_K / 2;
+    *delay     = LR20XX_NTC_DELAY;
 }
 
 void ral_lr20xx_bsp_get_xosc_cfg( const void* context, ral_xosc_cfg_t* xosc_cfg,

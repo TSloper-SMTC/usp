@@ -195,6 +195,13 @@ typedef struct
      */
     int ( *set_ntc_params )( uint16_t r_ratio, uint16_t beta, uint8_t delay );
 
+    /**
+     * Read the BSP default NTC parameters for this board.
+     * ratio_reg is in 10.9 fixed-point, beta_reg is in units of 2K.
+     * Used to seed cli_state at startup. NULL if not supported.
+     */
+    void ( *get_ntc_defaults )( uint16_t* ratio_reg, uint16_t* beta_reg, uint8_t* delay );
+
     /* --- XOSC trim --- */
 
     /**

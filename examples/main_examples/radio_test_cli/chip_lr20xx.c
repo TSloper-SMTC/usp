@@ -1343,6 +1343,15 @@ static int lr20xx_set_ntc_params( uint16_t r_ratio, uint16_t beta, uint8_t delay
     return 0;
 }
 
+/* Declared in ral_lr20xx_bsp.c — not in any header */
+extern void ral_lr20xx_bsp_get_ntc_defaults( const void* context, uint16_t* ratio_reg,
+                                              uint16_t* beta_reg, uint8_t* delay );
+
+static void lr20xx_get_ntc_defaults( uint16_t* ratio_reg, uint16_t* beta_reg, uint8_t* delay )
+{
+    ral_lr20xx_bsp_get_ntc_defaults( radio_context, ratio_reg, beta_reg, delay );
+}
+
 /*
  * --- Driver instance ---
  */
@@ -1384,6 +1393,7 @@ static const chip_driver_t lr20xx_driver = {
     .get_temp                 = lr20xx_get_temp,
     .set_temp_comp            = lr20xx_set_temp_comp,
     .set_ntc_params           = lr20xx_set_ntc_params,
+    .get_ntc_defaults         = lr20xx_get_ntc_defaults,
     .apply_xosc_trim          = lr20xx_apply_xosc_trim,
     .get_xosc_defaults        = lr20xx_get_xosc_defaults,
     .xosc_has_wait            = true,
