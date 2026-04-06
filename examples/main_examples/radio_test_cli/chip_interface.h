@@ -164,6 +164,39 @@ typedef struct
     int ( *receive_packet )( uint8_t* buf, uint8_t* buf_len, uint32_t timeout_ms,
                              int16_t* rssi_dbm, int8_t* snr_raw );
 
+    /* --- Temperature & compensation --- */
+
+    /**
+     * True if the board uses a TCXO (not XTAL). When true, tempcomp and ntc
+     * commands are rejected, and temp ntc source is unavailable.
+     */
+    bool is_tcxo;
+
+    /**
+     * Read chip temperature sensor. source: 0=VBE, 1=XOSC, 2=NTC.
+     * Returns temperature in degrees Celsius via *temp_c.
+     * Returns 0 on success, -1 on failure. NULL if not supported.
+     */
+    int ( *get_temp )( uint8_t source, float* temp_c );
+
+    /**
+     * Set temperature compensation mode. mode: 0=off, 1=relative, 2=absolute.
+     * ntc_en: true to enable NTC as compensation source.
+     * Returns 0 on success, -1 on failure. NULL if not supported.
+     */
+    int ( *set_temp_comp )( uint8_t mode, bool ntc_en );
+
+    /**
+     * Set NTC thermistor parameters for temperature compensation.
+     * r_ratio: resistance bias ratio (10.9 fixed-point).
+     * beta: beta coefficient (units of 2 Kelvin).
+     * delay: first-order time delay coefficient.
+     * Returns 0 on success, -1 on failure. NULL if not supported.
+     */
+    int ( *set_ntc_params )( uint16_t r_ratio, uint16_t beta, uint8_t delay );
+
+    /* --- XOSC trim --- */
+
     /**
      * Apply XOSC capacitor trim values immediately to hardware.
      * xta and xtb are in the range 0-47; wait_us is the stabilization delay

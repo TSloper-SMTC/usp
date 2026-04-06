@@ -1,6 +1,6 @@
 # Radio Test CLI — User Manual
 
-**Version:** v0.5.0
+**Version:** v0.5.1
 **Product:** Semtech Unified Software Platform (USP)
 **Platforms:** NUCLEO-L476RG · NUCLEO-L073RZ · FPB-RA0E2 · Linux (Raspberry Pi) · Zephyr (nRF54L15)
 **Chips:** SX1261 · SX1262 · SX1268 · LR1110 · LR1120 · LR1121 · LR2021 · LR2022
@@ -1096,4 +1096,4 @@ env CFLAGS="-Wno-incompatible-pointer-types" \
 
 ---
 
-*Radio Test CLI v0.5.0 | Copyright Semtech Corporation 2026. All rights reserved. | Confidential*
+*Radio Test CLI v0.5.1 | Copyright Semtech Corporation 2026. All rights reserved. | Confidential*

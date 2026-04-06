@@ -1166,6 +1166,215 @@ static int cmd_xosc( const tokenized_t* tokens, radio_config_t* cfg, const chip_
 }
 #endif /* LR20XX || SX126X */
 
+#if defined( LR20XX )
+/*
+ * --- Command: temp ---
+ */
+
+static const char* temp_source_str( uint8_t src )
+{
+    switch( src )
+    {
+    case 0:  return "VBE";
+    case 1:  return "XOSC";
+    case 2:  return "NTC";
+    default: return "unknown";
+    }
+}
+
+static int cmd_temp( const tokenized_t* tokens, radio_config_t* cfg, const chip_driver_t* chip )
+{
+    ( void ) cfg;
+
+    if( chip->get_temp == NULL )
+    {
+        printf( "ERROR: Temperature sensor not supported on %s\n", chip->chip_name );
+        return -1;
+    }
+
+    uint8_t source = 0; /* default: VBE */
+    if( tokens->count >= 2 )
+    {
+        if( strcasecmp( tokens->tokens[1], "vbe" ) == 0 )
+            source = 0;
+        else if( strcasecmp( tokens->tokens[1], "xosc" ) == 0 )
+            source = 1;
+        else if( strcasecmp( tokens->tokens[1], "ntc" ) == 0 )
+            source = 2;
+        else
+        {
+            printf( "ERROR: Usage: temp [vbe|xosc|ntc]\n" );
+            return -1;
+        }
+    }
+
+    float temp_c;
+    if( chip->get_temp( source, &temp_c ) != 0 )
+    {
+        return -1; /* error already printed by driver */
+    }
+
+    printf( "Temperature (%s): %.1f °C\n", temp_source_str( source ), temp_c );
+    return 0;
+}
+
+/*
+ * --- Command: tempcomp ---
+ */
+static int cmd_tempcomp( const tokenized_t* tokens, radio_config_t* cfg, const chip_driver_t* chip )
+{
+    if( chip->set_temp_comp == NULL )
+    {
+        printf( "ERROR: Temperature compensation not supported on %s\n", chip->chip_name );
+        return -1;
+    }
+
+    /* No argument: show current state */
+    if( tokens->count < 2 )
+    {
+        if( chip->is_tcxo )
+        {
+            printf( "Temperature compensation: off (TCXO — not applicable)\n" );
+        }
+        else
+        {
+            const char* mode_str;
+            switch( cfg->temp_comp_mode )
+            {
+            case 1:  mode_str = "relative"; break;
+            case 2:  mode_str = cfg->temp_comp_ntc ? "absolute + NTC" : "absolute"; break;
+            default: mode_str = "off"; break;
+            }
+            printf( "Temperature compensation: %s\n", mode_str );
+        }
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "off" ) == 0 )
+    {
+        if( chip->set_temp_comp( 0, false ) != 0 )
+            return -1;
+        cfg->temp_comp_mode = 0;
+        cfg->temp_comp_ntc  = false;
+        printf( "Temperature compensation: off\n" );
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "relative" ) == 0 )
+    {
+        if( chip->set_temp_comp( 1, false ) != 0 )
+            return -1;
+        cfg->temp_comp_mode = 1;
+        cfg->temp_comp_ntc  = false;
+        printf( "Temperature compensation: relative\n" );
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "absolute" ) == 0 )
+    {
+        if( chip->set_temp_comp( 2, true ) != 0 )
+            return -1;
+        cfg->temp_comp_mode = 2;
+        cfg->temp_comp_ntc  = true;
+        printf( "Temperature compensation: absolute + NTC\n" );
+        return 0;
+    }
+
+    printf( "ERROR: Usage: tempcomp <off|relative|absolute>\n" );
+    return -1;
+}
+
+/*
+ * --- Command: ntc ---
+ */
+static int cmd_ntc( const tokenized_t* tokens, radio_config_t* cfg, const chip_driver_t* chip )
+{
+    if( chip->set_ntc_params == NULL )
+    {
+        printf( "ERROR: NTC configuration not supported on %s\n", chip->chip_name );
+        return -1;
+    }
+
+    /* No argument: show current config */
+    if( tokens->count < 2 )
+    {
+        if( chip->is_tcxo )
+        {
+            printf( "NTC configuration: not applicable (TCXO board)\n" );
+        }
+        else if( cfg->ntc_ratio == 0 && cfg->ntc_beta == 0 )
+        {
+            printf( "NTC config: not set (use 'ntc ratio/beta/delay' to configure)\n" );
+        }
+        else
+        {
+            printf( "NTC config:\n" );
+            printf( "  R-ratio: %.2f (R_bias / R_NTC_25C)\n", cfg->ntc_ratio / 512.0 );
+            printf( "  Beta:    %u K\n", cfg->ntc_beta * 2 );
+            printf( "  Delay:   %u\n", cfg->ntc_delay );
+        }
+        return 0;
+    }
+
+    if( tokens->count < 3 )
+    {
+        printf( "ERROR: Usage: ntc <ratio|beta|delay> <value>\n" );
+        return -1;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "ratio" ) == 0 )
+    {
+        char* endptr;
+        float ratio = strtof( tokens->tokens[2], &endptr );
+        if( *endptr != '\0' || ratio < 0.0f || ratio > 127.0f )
+        {
+            printf( "ERROR: ratio must be 0.0-127.0 (R_bias / R_NTC_25C)\n" );
+            return -1;
+        }
+        cfg->ntc_ratio = ( uint16_t )( ratio * 512.0f + 0.5f );
+        if( chip->set_ntc_params( cfg->ntc_ratio, cfg->ntc_beta, cfg->ntc_delay ) != 0 )
+            return -1;
+        printf( "NTC R-ratio: %.2f (reg: %u)\n", ratio, cfg->ntc_ratio );
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "beta" ) == 0 )
+    {
+        char* endptr;
+        long val = strtol( tokens->tokens[2], &endptr, 0 );
+        if( *endptr != '\0' || val < 0 || val > 131070 )
+        {
+            printf( "ERROR: beta must be 0-131070 (Kelvin)\n" );
+            return -1;
+        }
+        cfg->ntc_beta = ( uint16_t )( val / 2 );
+        if( chip->set_ntc_params( cfg->ntc_ratio, cfg->ntc_beta, cfg->ntc_delay ) != 0 )
+            return -1;
+        printf( "NTC beta: %ld K (reg: %u)\n", val, cfg->ntc_beta );
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "delay" ) == 0 )
+    {
+        char* endptr;
+        long val = strtol( tokens->tokens[2], &endptr, 0 );
+        if( *endptr != '\0' || val < 0 || val > 255 )
+        {
+            printf( "ERROR: delay must be 0-255\n" );
+            return -1;
+        }
+        cfg->ntc_delay = ( uint8_t ) val;
+        if( chip->set_ntc_params( cfg->ntc_ratio, cfg->ntc_beta, cfg->ntc_delay ) != 0 )
+            return -1;
+        printf( "NTC delay: %u\n", cfg->ntc_delay );
+        return 0;
+    }
+
+    printf( "ERROR: Unknown ntc subcommand '%s'. Valid: ratio, beta, delay\n", tokens->tokens[1] );
+    return -1;
+}
+#endif /* LR20XX */
+
 /*
  * --- Command: pld ---
  */
@@ -1259,6 +1468,14 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
 #if defined( LR20XX )
         printf( "  xosc wait <0-255>          Set stabilization delay (us)\n" );
 #endif
+#endif
+#if defined( LR20XX )
+        printf( "\nTemperature:\n" );
+        printf( "  temp [vbe|xosc|ntc]        Read chip temperature sensor\n" );
+        printf( "  tempcomp <off|rel|abs>     Set XTAL temperature compensation mode\n" );
+        printf( "  ntc ratio <value>          NTC R_bias/R_NTC_25C ratio (e.g., 10.0)\n" );
+        printf( "  ntc beta <kelvin>          NTC beta coefficient (e.g., 3380)\n" );
+        printf( "  ntc delay <0-255>          NTC time delay coefficient\n" );
 #endif
 
         printf( "\nTest modes:\n" );
@@ -1591,6 +1808,52 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
     }
 #endif
 
+#if defined( LR20XX )
+    if( strcasecmp( topic, "temp" ) == 0 )
+    {
+        printf( "temp — read chip temperature sensor\n" );
+        printf( "  Sources:\n" );
+        printf( "    temp                     Read from VBE (default)\n" );
+        printf( "    temp vbe                 Built-in junction temperature\n" );
+        printf( "    temp xosc                Junction temperature near XOSC\n" );
+        printf( "    temp ntc                 External NTC thermistor (XTAL boards only)\n" );
+        printf( "\n" );
+        printf( "  Returns temperature in °C. Works while idle or during TX/RX.\n" );
+        printf( "  NTC source fails on TCXO boards.\n" );
+        return;
+    }
+
+    if( strcasecmp( topic, "tempcomp" ) == 0 )
+    {
+        printf( "tempcomp — XTAL temperature compensation during TX\n" );
+        printf( "  Modes:\n" );
+        printf( "    tempcomp                 Show current mode\n" );
+        printf( "    tempcomp off             Disable compensation\n" );
+        printf( "    tempcomp relative        Relative mode (VBE delta-T tracking)\n" );
+        printf( "    tempcomp absolute        Absolute mode (uses NTC sensor)\n" );
+        printf( "\n" );
+        printf( "  XTAL boards only — fails if TCXO is configured.\n" );
+        printf( "  For absolute mode, configure NTC parameters first with 'ntc'.\n" );
+        return;
+    }
+
+    if( strcasecmp( topic, "ntc" ) == 0 )
+    {
+        printf( "ntc — configure external NTC thermistor parameters\n" );
+        printf( "  Subcommands:\n" );
+        printf( "    ntc                      Show current NTC config\n" );
+        printf( "    ntc ratio <ratio>       R_bias / R_NTC_25C (e.g., 1.0, 10.0)\n" );
+        printf( "    ntc beta <kelvin>        Beta coefficient in Kelvin (e.g., 3380, 4250)\n" );
+        printf( "    ntc delay <value>        First-order time delay (0-255)\n" );
+        printf( "\n" );
+        printf( "  XTAL boards only — not applicable on TCXO boards.\n" );
+        printf( "  Example: 10k NTC with 100k bias, B=3380K:\n" );
+        printf( "    ntc ratio 10.0\n" );
+        printf( "    ntc beta 3380\n" );
+        return;
+    }
+#endif
+
     if( strcasecmp( topic, "show" ) == 0 )
     {
         printf( "show — display information\n" );
@@ -1632,7 +1895,7 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
     printf( "Unknown help topic '%s'. Available topics:\n", topic );
     printf( "  region, modulation, freq, power, pld, pa, per, start, show, delay\n" );
 #if defined( LR20XX )
-    printf( "  agc, boost-lf, boost-hf, xosc\n" );
+    printf( "  agc, boost-lf, boost-hf, xosc, temp, tempcomp, ntc\n" );
 #endif
     if( active_mod != NULL && active_mod->param_names != NULL )
     {
@@ -1718,6 +1981,14 @@ int cli_execute( const char* line, radio_config_t* cfg, const chip_driver_t* chi
     if( strcasecmp( cmd, "xosc" ) == 0 )
         return cmd_xosc( &tokens, cfg, chip );
 #endif
+#if defined( LR20XX )
+    if( strcasecmp( cmd, "temp" ) == 0 )
+        return cmd_temp( &tokens, cfg, chip );
+    if( strcasecmp( cmd, "tempcomp" ) == 0 )
+        return cmd_tempcomp( &tokens, cfg, chip );
+    if( strcasecmp( cmd, "ntc" ) == 0 )
+        return cmd_ntc( &tokens, cfg, chip );
+#endif
     if( strcasecmp( cmd, "pld" ) == 0 )
         return cmd_pld( &tokens, cfg, chip );
     if( strcasecmp( cmd, "show" ) == 0 )
@@ -1776,6 +2047,9 @@ static const char* standard_commands[] = {
 #if defined( LR20XX ) || defined( SX126X )
     "xosc",
 #endif
+#if defined( LR20XX )
+    "temp", "tempcomp", "ntc",
+#endif
 #ifdef __linux__
     "delay",
 #else
@@ -1799,6 +2073,9 @@ static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", "wait", 
 static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", NULL };
 #endif
 #if defined( LR20XX )
+static const char* temp_subcmds[]     = { "vbe", "xosc", "ntc", NULL };
+static const char* tempcomp_subcmds[] = { "off", "relative", "absolute", NULL };
+static const char* ntc_subcmds[]      = { "ratio", "beta", "delay", NULL };
 static const char* agc_completions[] = {
     "auto", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
     "g8", "g9", "g10", "g11", "g12", "g13", NULL
@@ -1983,6 +2260,20 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             values = xosc_subcmds;
         }
 #endif
+#if defined( LR20XX )
+        else if( strncasecmp( buf, "temp", cmd_len ) == 0 && cmd_len == 4 )
+        {
+            values = temp_subcmds;
+        }
+        else if( strncasecmp( buf, "tempcomp", cmd_len ) == 0 && cmd_len == 8 )
+        {
+            values = tempcomp_subcmds;
+        }
+        else if( strncasecmp( buf, "ntc", cmd_len ) == 0 && cmd_len == 3 )
+        {
+            values = ntc_subcmds;
+        }
+#endif
 #ifndef __linux__
         else if( strncasecmp( buf, "term", cmd_len ) == 0 && cmd_len == 4 )
         {
@@ -2012,6 +2303,11 @@ void cli_completion( const char* buf, linenoiseCompletions* lc )
             help_topics[j++] = "per";
 #if defined( LR20XX ) || defined( SX126X )
             help_topics[j++] = "xosc";
+#endif
+#if defined( LR20XX )
+            help_topics[j++] = "temp";
+            help_topics[j++] = "tempcomp";
+            help_topics[j++] = "ntc";
 #endif
             help_topics[j++] = "start";
             help_topics[j++] = "show";
@@ -2187,6 +2483,20 @@ char* cli_hints( const char* buf, int* color, int* bold )
     if( strncasecmp( buf, "xosc wait ", 10 ) == 0 && strlen( buf ) == 10 )
         return "<0-255>";
 #endif
+#endif
+#if defined( LR20XX )
+    if( strcasecmp( buf, "temp " ) == 0 )
+        return "<vbe|xosc|ntc>";
+    if( strcasecmp( buf, "tempcomp " ) == 0 )
+        return "<off|relative|absolute>";
+    if( strcasecmp( buf, "ntc " ) == 0 )
+        return "<ratio|beta|delay>";
+    if( strncasecmp( buf, "ntc ratio ", 10 ) == 0 && strlen( buf ) == 10 )
+        return "<R_bias/R_NTC_25C, e.g. 1.2>";
+    if( strncasecmp( buf, "ntc beta ", 9 ) == 0 && strlen( buf ) == 9 )
+        return "<Kelvin, e.g. 4250>";
+    if( strncasecmp( buf, "ntc delay ", 10 ) == 0 && strlen( buf ) == 10 )
+        return "<0-255>";
 #endif
 #ifdef __linux__
     if( strcasecmp( buf, "delay " ) == 0 )

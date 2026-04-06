@@ -229,6 +229,13 @@ typedef struct radio_config_s
     uint8_t xosc_xta;       /* XTA cap trim 0-47 */
     uint8_t xosc_xtb;       /* XTB cap trim 0-47 */
     uint8_t xosc_wait_us;   /* XOSC stabilization delay µs */
+
+    /* Temperature compensation (LR20xx only) */
+    uint8_t  temp_comp_mode; /* 0=off, 1=relative, 2=absolute */
+    bool     temp_comp_ntc;  /* true if NTC enabled for compensation */
+    uint16_t ntc_ratio;     /* NTC resistance bias ratio (10.9 fixed-point) */
+    uint16_t ntc_beta;       /* NTC beta coefficient (units of 2K) */
+    uint8_t  ntc_delay;      /* NTC first-order time delay coefficient */
 } radio_config_t;
 
 /*

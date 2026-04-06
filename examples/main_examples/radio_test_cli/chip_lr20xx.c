@@ -1268,6 +1268,82 @@ static int lr20xx_apply_xosc_trim( uint8_t xta, uint8_t xtb, uint8_t wait_us )
 }
 
 /*
+ * --- Temperature & compensation ---
+ */
+
+static bool lr20xx_is_tcxo( void )
+{
+    ral_xosc_cfg_t                      xosc_cfg;
+    lr20xx_system_tcxo_supply_voltage_t tcxo_voltage;
+    uint32_t                            tcxo_startup_tick = 0;
+    ral_lr20xx_bsp_get_xosc_cfg( radio_context, &xosc_cfg, &tcxo_voltage, &tcxo_startup_tick );
+    return ( xosc_cfg != RAL_XOSC_CFG_XTAL );
+}
+
+static int lr20xx_get_temp( uint8_t source, float* temp_c )
+{
+    if( source == LR20XX_SYSTEM_TEMP_SRC_NTC && lr20xx_is_tcxo( ) )
+    {
+        fprintf( stderr, "temp ntc: not available on TCXO boards\n" );
+        return -1;
+    }
+
+    uint16_t raw;
+    lr20xx_status_t rc = lr20xx_system_get_temp( radio_context,
+                                                  LR20XX_SYSTEM_VALUE_FORMAT_UNIT,
+                                                  LR20XX_SYSTEM_MEAS_RES_13_BITS,
+                                                  ( lr20xx_system_temp_src_t ) source,
+                                                  &raw );
+    if( rc != LR20XX_STATUS_OK )
+    {
+        fprintf( stderr, "ERROR: GetTemp failed (%d)\n", rc );
+        return -1;
+    }
+
+    /* Format=UNIT: temperature in 13.5-bit signed format.
+     * Bits [15:5] = integer + sign, bits [4:0] = fractional (1/32 °C).
+     * The 16-bit value is Temp * 32, as a signed 16-bit integer. */
+    int16_t signed_raw = ( int16_t ) raw;
+    *temp_c = ( float ) signed_raw / 32.0f;
+    return 0;
+}
+
+static int lr20xx_set_temp_comp( uint8_t mode, bool ntc_en )
+{
+    if( lr20xx_is_tcxo( ) )
+    {
+        fprintf( stderr, "tempcomp: not supported on TCXO boards\n" );
+        return -1;
+    }
+
+    lr20xx_status_t rc = lr20xx_system_set_temp_comp_cfg(
+        radio_context, ( lr20xx_system_temp_comp_mode_t ) mode, ntc_en );
+    if( rc != LR20XX_STATUS_OK )
+    {
+        fprintf( stderr, "ERROR: SetTempCompCfg failed (%d)\n", rc );
+        return -1;
+    }
+    return 0;
+}
+
+static int lr20xx_set_ntc_params( uint16_t r_ratio, uint16_t beta, uint8_t delay )
+{
+    if( lr20xx_is_tcxo( ) )
+    {
+        fprintf( stderr, "ntc: not applicable on TCXO boards\n" );
+        return -1;
+    }
+
+    lr20xx_status_t rc = lr20xx_system_set_ntc_params( radio_context, r_ratio, beta, delay );
+    if( rc != LR20XX_STATUS_OK )
+    {
+        fprintf( stderr, "ERROR: SetNtcParams failed (%d)\n", rc );
+        return -1;
+    }
+    return 0;
+}
+
+/*
  * --- Driver instance ---
  */
 
@@ -1304,6 +1380,10 @@ static const chip_driver_t lr20xx_driver = {
     .read_rx_packet           = lr20xx_read_rx_packet,
     .wait_tx_done             = lr20xx_wait_tx_done,
     .receive_packet           = lr20xx_receive_packet,
+    .is_tcxo                  = false, /* resolved at runtime by get_temp/set_temp_comp */
+    .get_temp                 = lr20xx_get_temp,
+    .set_temp_comp            = lr20xx_set_temp_comp,
+    .set_ntc_params           = lr20xx_set_ntc_params,
     .apply_xosc_trim          = lr20xx_apply_xosc_trim,
     .get_xosc_defaults        = lr20xx_get_xosc_defaults,
     .xosc_has_wait            = true,
