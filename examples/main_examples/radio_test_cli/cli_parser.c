@@ -1242,41 +1242,42 @@ static int cmd_tempcomp( const tokenized_t* tokens, radio_config_t* cfg, const c
             switch( cfg->temp_comp_mode )
             {
             case 1:  mode_str = "relative"; break;
-            case 2:  mode_str = cfg->temp_comp_ntc ? "absolute + NTC" : "absolute"; break;
+            case 2:  mode_str = "absolute"; break;
             default: mode_str = "off"; break;
             }
-            printf( "Temperature compensation: %s\n", mode_str );
+            printf( "Temperature compensation: %s%s\n", mode_str,
+                    cfg->temp_comp_ntc ? " + NTC" : "" );
         }
         return 0;
     }
 
     if( strcasecmp( tokens->tokens[1], "off" ) == 0 )
     {
-        if( chip->set_temp_comp( 0, false ) != 0 )
+        if( chip->set_temp_comp( 0, cfg->temp_comp_ntc ) != 0 )
             return -1;
         cfg->temp_comp_mode = 0;
-        cfg->temp_comp_ntc  = false;
-        printf( "Temperature compensation: off\n" );
+        printf( "Temperature compensation: off%s\n",
+                cfg->temp_comp_ntc ? " (NTC still enabled)" : "" );
         return 0;
     }
 
     if( strcasecmp( tokens->tokens[1], "relative" ) == 0 )
     {
-        if( chip->set_temp_comp( 1, false ) != 0 )
+        if( chip->set_temp_comp( 1, cfg->temp_comp_ntc ) != 0 )
             return -1;
         cfg->temp_comp_mode = 1;
-        cfg->temp_comp_ntc  = false;
-        printf( "Temperature compensation: relative\n" );
+        printf( "Temperature compensation: relative%s\n",
+                cfg->temp_comp_ntc ? " + NTC" : "" );
         return 0;
     }
 
     if( strcasecmp( tokens->tokens[1], "absolute" ) == 0 )
     {
-        if( chip->set_temp_comp( 2, true ) != 0 )
+        if( chip->set_temp_comp( 2, cfg->temp_comp_ntc ) != 0 )
             return -1;
         cfg->temp_comp_mode = 2;
-        cfg->temp_comp_ntc  = true;
-        printf( "Temperature compensation: absolute + NTC\n" );
+        printf( "Temperature compensation: absolute%s\n",
+                cfg->temp_comp_ntc ? " + NTC" : "" );
         return 0;
     }
 
@@ -1302,23 +1303,51 @@ static int cmd_ntc( const tokenized_t* tokens, radio_config_t* cfg, const chip_d
         {
             printf( "NTC configuration: not applicable (TCXO board)\n" );
         }
-        else if( cfg->ntc_ratio == 0 && cfg->ntc_beta == 0 )
-        {
-            printf( "NTC config: not set (use 'ntc ratio/beta/delay' to configure)\n" );
-        }
         else
         {
-            printf( "NTC config:\n" );
-            printf( "  R-ratio: %.2f (R_bias / R_NTC_25C)\n", cfg->ntc_ratio / 512.0 );
-            printf( "  Beta:    %u K\n", cfg->ntc_beta * 2 );
-            printf( "  Delay:   %u\n", cfg->ntc_delay );
+            printf( "NTC: %s\n", cfg->temp_comp_ntc ? "on" : "off" );
+            if( cfg->ntc_ratio == 0 && cfg->ntc_beta == 0 )
+            {
+                printf( "  Params: not set (use 'ntc ratio/beta/delay' to configure)\n" );
+            }
+            else
+            {
+                printf( "  R-ratio: %.2f (R_bias / R_NTC_25C)\n", cfg->ntc_ratio / 512.0 );
+                printf( "  Beta:    %u K\n", cfg->ntc_beta * 2 );
+                printf( "  Delay:   %u\n", cfg->ntc_delay );
+            }
         }
+        return 0;
+    }
+
+    /* ntc on / ntc off — enable or disable NTC in temp compensation */
+    if( strcasecmp( tokens->tokens[1], "on" ) == 0 )
+    {
+        cfg->temp_comp_ntc = true;
+        if( cfg->temp_comp_mode > 0 )
+        {
+            if( chip->set_temp_comp( cfg->temp_comp_mode, true ) != 0 )
+                return -1;
+        }
+        printf( "NTC: on\n" );
+        return 0;
+    }
+
+    if( strcasecmp( tokens->tokens[1], "off" ) == 0 )
+    {
+        cfg->temp_comp_ntc = false;
+        if( cfg->temp_comp_mode > 0 )
+        {
+            if( chip->set_temp_comp( cfg->temp_comp_mode, false ) != 0 )
+                return -1;
+        }
+        printf( "NTC: off\n" );
         return 0;
     }
 
     if( tokens->count < 3 )
     {
-        printf( "ERROR: Usage: ntc <ratio|beta|delay> <value>\n" );
+        printf( "ERROR: Usage: ntc <on|off|ratio|beta|delay> <value>\n" );
         return -1;
     }
 
@@ -1830,26 +1859,30 @@ static void print_help( const char* topic, const radio_config_t* cfg, const chip
         printf( "    tempcomp                 Show current mode\n" );
         printf( "    tempcomp off             Disable compensation\n" );
         printf( "    tempcomp relative        Relative mode (VBE delta-T tracking)\n" );
-        printf( "    tempcomp absolute        Absolute mode (uses NTC sensor)\n" );
+        printf( "    tempcomp absolute        Absolute mode (VBE absolute frequency)\n" );
         printf( "\n" );
         printf( "  XTAL boards only — fails if TCXO is configured.\n" );
-        printf( "  For absolute mode, configure NTC parameters first with 'ntc'.\n" );
+        printf( "  Use 'ntc on/off' to enable NTC with either mode.\n" );
         return;
     }
 
     if( strcasecmp( topic, "ntc" ) == 0 )
     {
-        printf( "ntc — configure external NTC thermistor parameters\n" );
+        printf( "ntc — NTC thermistor enable and parameter configuration\n" );
         printf( "  Subcommands:\n" );
-        printf( "    ntc                      Show current NTC config\n" );
-        printf( "    ntc ratio <ratio>       R_bias / R_NTC_25C (e.g., 1.0, 10.0)\n" );
+        printf( "    ntc                      Show NTC status and config\n" );
+        printf( "    ntc on                   Enable NTC in temperature compensation\n" );
+        printf( "    ntc off                  Disable NTC (VBE only)\n" );
+        printf( "    ntc ratio <ratio>        R_bias / R_NTC_25C (e.g., 1.0, 10.0)\n" );
         printf( "    ntc beta <kelvin>        Beta coefficient in Kelvin (e.g., 3380, 4250)\n" );
         printf( "    ntc delay <value>        First-order time delay (0-255)\n" );
         printf( "\n" );
         printf( "  XTAL boards only — not applicable on TCXO boards.\n" );
+        printf( "  Enable with 'ntc on' after setting tempcomp mode.\n" );
         printf( "  Example: 10k NTC with 100k bias, B=3380K:\n" );
         printf( "    ntc ratio 10.0\n" );
         printf( "    ntc beta 3380\n" );
+        printf( "    ntc on\n" );
         return;
     }
 #endif
@@ -2075,7 +2108,7 @@ static const char* xosc_subcmds[]  = { "show", "default", "xta", "xtb", NULL };
 #if defined( LR20XX )
 static const char* temp_subcmds[]     = { "vbe", "xosc", "ntc", NULL };
 static const char* tempcomp_subcmds[] = { "off", "relative", "absolute", NULL };
-static const char* ntc_subcmds[]      = { "ratio", "beta", "delay", NULL };
+static const char* ntc_subcmds[]      = { "on", "off", "ratio", "beta", "delay", NULL };
 static const char* agc_completions[] = {
     "auto", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
     "g8", "g9", "g10", "g11", "g12", "g13", NULL

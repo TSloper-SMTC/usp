@@ -293,6 +293,17 @@ void cli_state_print_status( const radio_config_t* cfg )
             printf( "  Boost HF:   auto (4)%s\n", hf_tag );
         else
             printf( "  Boost HF:   %d%s\n", cfg->rx_boost_hf, hf_tag );
+        {
+            const char* tc_mode;
+            switch( cfg->temp_comp_mode )
+            {
+            case 1:  tc_mode = "relative"; break;
+            case 2:  tc_mode = "absolute"; break;
+            default: tc_mode = "off"; break;
+            }
+            printf( "  Temp comp:  %s%s\n", tc_mode,
+                    cfg->temp_comp_ntc ? " + NTC" : "" );
+        }
 #endif
     }
 
