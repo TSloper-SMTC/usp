@@ -73,7 +73,7 @@
 /* NTC thermistor defaults (ERT-JZER104F, 100 kΩ, B=4250 K, 120 kΩ bias) */
 #define LR20XX_NTC_RATIO_F        1.2f   /* R_bias / R_NTC_25C = 120k / 100k */
 #define LR20XX_NTC_BETA_K         4250   /* Beta coefficient in Kelvin */
-#define LR20XX_NTC_DELAY           0
+#define LR20XX_NTC_DELAY           5     /* 100 ms filter (AN1200.106 recommended) */
 
 /*
  * -----------------------------------------------------------------------------
